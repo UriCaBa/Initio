@@ -1,0 +1,27 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+.vs/
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs & Temp
+*.log
+*.tmp
+tmp/
+*.ps1
+build_log*.txt
+*.png
+
+# Packaging
+*.nupkg
+*.snupkg
+*.zip
+publish/
+
+# Local data
+.codex-local/
+settings.json
