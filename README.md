@@ -16,7 +16,7 @@ A modern WPF desktop application for quickly bootstrapping a fresh Windows PC by
 
 ## Build & Run
 ```powershell
-cd "C:\Users\Uri\Desktop\NewPCSetupWPF"
+cd ".\Initio"
 dotnet run
 ```
 

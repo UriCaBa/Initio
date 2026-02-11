@@ -26,7 +26,7 @@ Desktop WPF application (.NET 8) for bootstrapping a fresh Windows PC by batch-i
 
 ## Build & Publish
 ```powershell
-cd "C:\Users\Uri\Desktop\NewPCSetupWPF"
+cd ".\Initio"
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 Output: `bin\Release\net8.0-windows\win-x64\publish\NewPCSetupWPF.exe`
