@@ -10,10 +10,11 @@
 
 # Logs & Temp
 *.log
-crash_log.txt
 *.tmp
 tmp/
 *.ps1
+build_log*.txt
+*.png
 
 # Packaging
 *.nupkg

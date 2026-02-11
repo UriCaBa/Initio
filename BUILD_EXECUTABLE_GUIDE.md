@@ -3,7 +3,7 @@
 ## 1. Open PowerShell in the project folder
 > **PS (go to project folder):** move to the root where `NewPCSetupWPF.csproj` exists
 ```powershell
-cd "C:\Users\Uri\Desktop\NewPCSetupWPF"
+cd ".\Initio"
 ```
 
 ## 2. Check if .NET 8 SDK is installed

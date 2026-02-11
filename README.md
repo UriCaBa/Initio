@@ -26,6 +26,13 @@ dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=
 ```
 Output: `bin\Release\net8.0-windows\win-x64\publish\Initio.exe`
 
+## Distribution (GitHub Releases)
+To share the app without code:
+1.  Go to **Releases** > **Draft a new release** on GitHub.
+2.  Tag it (e.g., `v1.0.0`).
+3.  Upload the **`Initio.exe`** file from the `publish` folder above.
+4.  Users can download just the `.exe` and run it (no install needed).
+
 ## Project Structure
 ```
 NewPCSetupWPF/
