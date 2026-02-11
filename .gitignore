@@ -1,8 +1,26 @@
-bin/
-obj/
+# Build results
+[Bb]in/
+[Oo]bj/
 .vs/
+
+# User-specific files
 *.user
-*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs & Temp
+*.log
+crash_log.txt
+*.tmp
+tmp/
+*.ps1
+
+# Packaging
 *.nupkg
 *.snupkg
+*.zip
+publish/
+
+# Local data
 .codex-local/
+settings.json
