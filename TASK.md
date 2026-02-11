@@ -73,5 +73,5 @@
 - [x] **Cleanup**: Remove "Simulate Install" features and "Recommended" text from Silent Install
 - [x] **Icon Fix**: Maximize icon content (remove transparent padding) to appear larger in Taskbar
 - [x] **Riot Fix**: Update default catalog Name to "Riot Vanguard" to match `winget list` output
-- [x] **Rebranding**: Rename app to **"Initio"** in UI and Documentation
+- [x] **Rebranding**: Rename app to **"Initio"** in UI and Documentation (Header updated)
 

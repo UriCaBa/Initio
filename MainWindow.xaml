@@ -725,11 +725,11 @@
                         <TextBlock FontSize="12" FontWeight="Bold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{DynamicResource AppFont}"
-                                   Text="New PC Setup" />
+                                   Text="Initio" />
                         <TextBlock Margin="10,0,0,0" FontSize="11"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    VerticalAlignment="Center"
-                                   Text="winget bootstrap" />
+                                   Text="New PC Setup" />
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
