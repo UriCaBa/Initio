@@ -1,0 +1,41 @@
+# Initio 🚀
+
+A modern WPF desktop application for quickly bootstrapping a fresh Windows PC by batch-installing apps via **winget**.
+
+## Features
+- **Quick Profiles**: One-click selection of apps for Dev, Home Office, Gaming, or custom use
+- **Curated Catalog**: Default list of ~22 essential apps across categories  
+- **Store Browser**: Browse ~100 trending apps by category, add to your catalog
+- **Batch Install**: Install all selected apps sequentially with retry logic, ETA, and live logs
+- **Modern UI**: Professional dark SaaS-style interface
+
+## Requirements
+- Windows 10/11
+- .NET 8 SDK (for building)
+- winget (App Installer) installed from Microsoft Store
+
+## Build & Run
+```powershell
+cd "C:\Users\Uri\Desktop\NewPCSetupWPF"
+dotnet run
+```
+
+## Publish Executable
+```powershell
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+```
+Output: `bin\Release\net8.0-windows\win-x64\publish\Initio.exe`
+
+## Project Structure
+```
+NewPCSetupWPF/
+├── App.xaml / App.xaml.cs          # Application entry point
+├── MainWindow.xaml / .xaml.cs      # Main window UI and logic
+├── Models/                         # Data models
+│   ├── AppItem.cs                  # Catalog app model
+│   ├── StoreTrendItem.cs           # Store trending app model
+│   └── StoreTrendCatalog.cs        # Hardcoded store catalog data
+├── Themes/
+│   └── Theme.Dark.xaml             # Unified dark theme
+└── NewPCSetupWPF.csproj            # .NET 8 WPF project file
+```

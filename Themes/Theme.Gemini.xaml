@@ -1,38 +1,38 @@
-<!-- Theme.DarkElegant.xaml
-     THEME: MIDNIGHT ELEGANCE
-     A sophisticated, calming dark theme with deep blues and soft gold accents.
-     Inspired by: VS Code "Night Owl", Luxury Dashboards.
-     Key colors: Midnight Blue (#011627), Soft Gold (#ECC48D), Royal Blue (#82AAFF).
+<!-- Theme.Gemini.xaml
+     THEME: GEMINI
+     A deep-space, high-contrast, futuristic theme inspired by AI and constellations.
+     Key colors: Deep Void (#050510), Star White (#E0E0FF), Nebula Purple (#8A2BE2),
+     Cyber Cyan (#00F0FF), Pulse Magenta (#FF0055).
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ═══ Color Palette ═══ -->
-    <Color x:Key="BackgroundColor">#011627</Color>
-    <Color x:Key="SidebarColor">#011220</Color>
-    <Color x:Key="HeaderColor">#011627</Color>
-    <Color x:Key="SurfaceColor">#0B253A</Color>
-    <Color x:Key="SurfaceHighColor">#112F4B</Color>
-    <Color x:Key="OverlayColor">#1D3B53</Color>
-    <Color x:Key="InputBgColor">#010E1A</Color>
-    <Color x:Key="BorderColor">#1E3A5F</Color>
-    <Color x:Key="BorderLightColor">#406080</Color>
+    <Color x:Key="BackgroundColor">#050510</Color> <!-- Deepest void -->
+    <Color x:Key="SidebarColor">#080814</Color>
+    <Color x:Key="HeaderColor">#050510</Color>
+    <Color x:Key="SurfaceColor">#0B0B1A</Color> <!-- Slightly lighter void -->
+    <Color x:Key="SurfaceHighColor">#151528</Color> <!-- Card/Button BG -->
+    <Color x:Key="OverlayColor">#202040</Color> <!-- Hover state -->
+    <Color x:Key="InputBgColor">#080610</Color>
+    <Color x:Key="BorderColor">#303050</Color>
+    <Color x:Key="BorderLightColor">#505080</Color>
 
-    <!-- Accent: Soft Gold & Royal Blue -->
-    <Color x:Key="AccentColor">#82AAFF</Color>
-    <Color x:Key="AccentHoverColor">#A6C6FF</Color>
-    <Color x:Key="AccentPressedColor">#5E80D0</Color>
-    <Color x:Key="AccentSecondaryColor">#ECC48D</Color> <!-- Gold -->
+    <!-- Accent: Nebula Purple -->
+    <Color x:Key="AccentColor">#8A2BE2</Color>
+    <Color x:Key="AccentHoverColor">#A040FF</Color>
+    <Color x:Key="AccentPressedColor">#6010A0</Color>
+    <Color x:Key="AccentSecondaryColor">#00F0FF</Color> <!-- Cyan -->
 
     <!-- Semantic -->
-    <Color x:Key="SuccessColor">#22DA6E</Color>
-    <Color x:Key="WarningColor">#FFCB6B</Color>
-    <Color x:Key="DangerColor">#EF5350</Color>
+    <Color x:Key="SuccessColor">#00FF9D</Color>
+    <Color x:Key="WarningColor">#FFD700</Color>
+    <Color x:Key="DangerColor">#FF0055</Color>
 
     <!-- Text -->
-    <Color x:Key="TextPrimaryColor">#D6DEEB</Color>
-    <Color x:Key="TextSecondaryColor">#8F9CB5</Color>
-    <Color x:Key="TextMutedColor">#5F7E97</Color>
+    <Color x:Key="TextPrimaryColor">#FFFFFF</Color>
+    <Color x:Key="TextSecondaryColor">#C0C0E0</Color>
+    <Color x:Key="TextMutedColor">#707090</Color>
 
     <!-- ═══ Brushes ═══ -->
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
@@ -57,14 +57,14 @@
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
 
-    <!-- Gradient: Midnight to Gold (Subtle) -->
+    <!-- Gradient: Purple to Cyan -->
     <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#011627" Offset="0" />
-        <GradientStop Color="#1D3B53" Offset="1" />
+        <GradientStop Color="#8A2BE2" Offset="0" />
+        <GradientStop Color="#00F0FF" Offset="1" />
     </LinearGradientBrush>
 
     <!-- ═══ Typography ═══ -->
     <FontFamily x:Key="AppFont">Segoe UI, Arial, sans-serif</FontFamily>
-    <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
+    <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, Courier New</FontFamily>
 
 </ResourceDictionary>

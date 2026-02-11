@@ -1,38 +1,38 @@
-<!-- Theme.DarkElegant.xaml
-     THEME: MIDNIGHT ELEGANCE
-     A sophisticated, calming dark theme with deep blues and soft gold accents.
-     Inspired by: VS Code "Night Owl", Luxury Dashboards.
-     Key colors: Midnight Blue (#011627), Soft Gold (#ECC48D), Royal Blue (#82AAFF).
+<!-- Theme.Hacker.xaml
+     THEME: HACKER / TERMINAL
+     A retro-futuristic, matrix-inspired theme.
+     Inspired by: The Matrix, Terminal interfaces, Kali Linux.
+     Key colors: Matrix Black (#000000), Terminal Green (#00FF00), Glitch White (#F0F0F0).
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ═══ Color Palette ═══ -->
-    <Color x:Key="BackgroundColor">#011627</Color>
-    <Color x:Key="SidebarColor">#011220</Color>
-    <Color x:Key="HeaderColor">#011627</Color>
-    <Color x:Key="SurfaceColor">#0B253A</Color>
-    <Color x:Key="SurfaceHighColor">#112F4B</Color>
-    <Color x:Key="OverlayColor">#1D3B53</Color>
-    <Color x:Key="InputBgColor">#010E1A</Color>
-    <Color x:Key="BorderColor">#1E3A5F</Color>
-    <Color x:Key="BorderLightColor">#406080</Color>
+    <Color x:Key="BackgroundColor">#000000</Color>
+    <Color x:Key="SidebarColor">#020202</Color>
+    <Color x:Key="HeaderColor">#000000</Color>
+    <Color x:Key="SurfaceColor">#0D0D0D</Color>
+    <Color x:Key="SurfaceHighColor">#1A1A1A</Color>
+    <Color x:Key="OverlayColor">#262626</Color>
+    <Color x:Key="InputBgColor">#050505</Color>
+    <Color x:Key="BorderColor">#00FF00</Color> <!-- Distinctive Green Borders -->
+    <Color x:Key="BorderLightColor">#008800</Color>
 
-    <!-- Accent: Soft Gold & Royal Blue -->
-    <Color x:Key="AccentColor">#82AAFF</Color>
-    <Color x:Key="AccentHoverColor">#A6C6FF</Color>
-    <Color x:Key="AccentPressedColor">#5E80D0</Color>
-    <Color x:Key="AccentSecondaryColor">#ECC48D</Color> <!-- Gold -->
+    <!-- Accent: Terminal Green -->
+    <Color x:Key="AccentColor">#00FF00</Color>
+    <Color x:Key="AccentHoverColor">#33FF33</Color>
+    <Color x:Key="AccentPressedColor">#00CC00</Color>
+    <Color x:Key="AccentSecondaryColor">#008F11</Color> <!-- Darker Matrix Green -->
 
     <!-- Semantic -->
-    <Color x:Key="SuccessColor">#22DA6E</Color>
-    <Color x:Key="WarningColor">#FFCB6B</Color>
-    <Color x:Key="DangerColor">#EF5350</Color>
+    <Color x:Key="SuccessColor">#00FF00</Color>
+    <Color x:Key="WarningColor">#FFFF00</Color>
+    <Color x:Key="DangerColor">#FF0000</Color>
 
     <!-- Text -->
-    <Color x:Key="TextPrimaryColor">#D6DEEB</Color>
-    <Color x:Key="TextSecondaryColor">#8F9CB5</Color>
-    <Color x:Key="TextMutedColor">#5F7E97</Color>
+    <Color x:Key="TextPrimaryColor">#00FF00</Color> <!-- Everything is green -->
+    <Color x:Key="TextSecondaryColor">#00AA00</Color>
+    <Color x:Key="TextMutedColor">#005500</Color>
 
     <!-- ═══ Brushes ═══ -->
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
@@ -57,14 +57,14 @@
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
 
-    <!-- Gradient: Midnight to Gold (Subtle) -->
-    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#011627" Offset="0" />
-        <GradientStop Color="#1D3B53" Offset="1" />
+    <!-- Gradient: Matrix Rain (Vertical Green) -->
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#00FF00" Offset="0" />
+        <GradientStop Color="#003300" Offset="1" />
     </LinearGradientBrush>
 
     <!-- ═══ Typography ═══ -->
-    <FontFamily x:Key="AppFont">Segoe UI, Arial, sans-serif</FontFamily>
-    <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas</FontFamily>
+    <FontFamily x:Key="AppFont">Consolas, Courier New, Monospace</FontFamily> <!-- Force Monospace -->
+    <FontFamily x:Key="MonoFont">Consolas, Courier New, Monospace</FontFamily>
 
 </ResourceDictionary>
