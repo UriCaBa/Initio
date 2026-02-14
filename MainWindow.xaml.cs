@@ -45,11 +45,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private readonly ObservableCollection<AppItem> _appItems = new();
     private readonly ObservableCollection<StoreTrendItem> _storeTrendItems = new();
     private readonly ObservableCollection<StoreTrendItem> _wingetSearchResults = new();
+    private readonly ObservableCollection<BloatwareItem> _bloatwareItems = new();
     private string _wingetSearchQuery = string.Empty;
     private bool _isSearching;
     private readonly ReadOnlyCollection<ThemeOption> _themeOptions;
     private readonly ReadOnlyCollection<SelectionProfile> _selectionProfiles;
-    private readonly ReadOnlyCollection<string> _storeCategories;
+    private ReadOnlyCollection<string> _storeCategories = new(Array.Empty<string>());
+    private ReadOnlyCollection<string> _bloatwareCategories = new(Array.Empty<string>());
+    private string _selectedBloatwareCategory = "All";
     private readonly HashSet<string> _knownInstalledIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly StringBuilder _logBuilder = new();
     private readonly object _logSync = new();
@@ -99,24 +102,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         StoreTrendItemsView.Filter = FilterStoreTrendItem;
         WingetSearchResultsView = CollectionViewSource.GetDefaultView(_wingetSearchResults);
 
-        // Populate store catalog
-        foreach (var item in StoreTrendCatalog.CreateDefault())
-        {
-            // Subscribe for summary updates
-            item.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(StoreTrendItem.IsSelected))
-                    OnPropertyChanged(nameof(StoreSelectionSummary));
-            };
-            _storeTrendItems.Add(item);
-        }
+        // Initialize bloatware collection and view
+        BloatwareItemsView = CollectionViewSource.GetDefaultView(_bloatwareItems);
+        BloatwareItemsView.Filter = FilterBloatwareItem;
+        BloatwareItemsView.SortDescriptions.Add(new SortDescription(nameof(BloatwareItem.Category), ListSortDirection.Ascending));
+        BloatwareItemsView.SortDescriptions.Add(new SortDescription(nameof(BloatwareItem.Name), ListSortDirection.Ascending));
+        PopulateBloatwareItems();
 
-        var categories = _storeTrendItems
-            .Select(item => item.Category)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(category => category, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        _storeCategories = new ReadOnlyCollection<string>(categories);
+        // Populate store catalog with embedded JSON fallback (instant, no network)
+        PopulateStoreItems(Services.CatalogService.LoadEmbeddedCatalog());
 
         // Load defaults — all default apps are pre-selected
         ReloadDefaultCatalog();
@@ -128,6 +122,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SetProgress(0, 1);
         UpdateProfilePillStyles();
         BuildCategoryTabs();
+        BuildBloatwareCategoryTabs();
+
+        // Fire-and-forget: try to load the remote catalog in the background
+        _ = LoadCatalogAsync();
     }
 
     // ═══ Public Properties ═══
@@ -136,9 +134,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public ICollectionView AppItemsView { get; }
     public ICollectionView StoreTrendItemsView { get; }
     public ICollectionView WingetSearchResultsView { get; }
+    public ICollectionView BloatwareItemsView { get; }
     public ReadOnlyCollection<ThemeOption> ThemeOptions => _themeOptions;
     public ReadOnlyCollection<SelectionProfile> SelectionProfiles => _selectionProfiles;
     public ReadOnlyCollection<string> StoreCategories => _storeCategories;
+    public ReadOnlyCollection<string> BloatwareCategories => _bloatwareCategories;
+
+    public string SelectedBloatwareCategory
+    {
+        get => _selectedBloatwareCategory;
+        set
+        {
+            if (SetField(ref _selectedBloatwareCategory, value))
+            {
+                BloatwareItemsView.Refresh();
+                UpdateBloatwareCategoryTabStyles();
+            }
+        }
+    }
 
     public ThemeOption? SelectedTheme
     {
@@ -300,6 +313,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 OnPropertyChanged(nameof(CanCancelInstall));
                 OnPropertyChanged(nameof(CanRemoveSelectedApp));
                 OnPropertyChanged(nameof(CanAddStoreTrendApp));
+                OnPropertyChanged(nameof(CanDebloat));
+                OnPropertyChanged(nameof(CanCancelDebloat));
             }
         }
     }
@@ -323,6 +338,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public bool CanCancelInstall => IsBusy && _installCancellationTokenSource is not null;
     public bool CanRemoveSelectedApp => !IsBusy && SelectedAppItem is not null;
     public bool CanAddStoreTrendApp => !IsBusy && SelectedStoreTrendItem is not null;
+    public bool CanDebloat => !IsBusy;
+    public bool CanCancelDebloat => IsBusy && _debloatCancellationTokenSource is not null;
+
+    public string BloatwareSummary
+    {
+        get
+        {
+            var detected = _bloatwareItems.Count(x => x.IsInstalled);
+            var selected = _bloatwareItems.Count(x => x.IsSelected && x.IsInstalled);
+            var removed = _bloatwareItems.Count(x => !x.IsInstalled && x.RemovalStatus == "Removed");
+            return $"{selected} selected · {detected} detected · {removed} removed";
+        }
+    }
 
     public string SelectionSummary
     {
@@ -726,6 +754,82 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             || app.PopularitySignal.Contains(term, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ═══ Bloatware Filtering & Init ═══
+    private bool FilterBloatwareItem(object item)
+    {
+        if (item is not BloatwareItem bloat) return false;
+        if (!bloat.IsInstalled && bloat.RemovalStatus != "Removed") return false;
+        if (SelectedBloatwareCategory == "All") return true;
+        return string.Equals(bloat.Category, SelectedBloatwareCategory, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void PopulateBloatwareItems()
+    {
+        _bloatwareItems.Clear();
+        foreach (var item in BloatwareService.GetKnownBloatware())
+        {
+            item.PropertyChanged += BloatwareItem_PropertyChanged;
+            _bloatwareItems.Add(item);
+        }
+
+        _bloatwareCategories = new ReadOnlyCollection<string>(
+            _bloatwareItems.Select(i => i.Category)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+                .Prepend("All")
+                .ToList());
+    }
+
+    private void BloatwareItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(BloatwareItem.IsSelected) or nameof(BloatwareItem.IsInstalled))
+        {
+            OnPropertyChanged(nameof(BloatwareSummary));
+        }
+    }
+
+    private void BuildBloatwareCategoryTabs()
+    {
+        if (BloatwareCategoryTabsPanel == null) return;
+        BloatwareCategoryTabsPanel.Children.Clear();
+
+        foreach (var category in _bloatwareCategories)
+        {
+            var btn = new System.Windows.Controls.Button
+            {
+                Content = category,
+                Tag = category,
+                Margin = new Thickness(0, 0, 5, 5)
+            };
+            btn.Click += BloatwareCategoryTab_Click;
+            BloatwareCategoryTabsPanel.Children.Add(btn);
+        }
+        UpdateBloatwareCategoryTabStyles();
+    }
+
+    private void BloatwareCategoryTab_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button btn && btn.Tag is string category)
+            SelectedBloatwareCategory = category;
+    }
+
+    private void UpdateBloatwareCategoryTabStyles()
+    {
+        if (BloatwareCategoryTabsPanel == null) return;
+        var activeStyle = (Style)FindResource("CategoryTabActiveStyle");
+        var inactiveStyle = (Style)FindResource("CategoryTabStyle");
+
+        foreach (var child in BloatwareCategoryTabsPanel.Children)
+        {
+            if (child is System.Windows.Controls.Button btn && btn.Tag is string tag)
+            {
+                btn.Style = string.Equals(tag, SelectedBloatwareCategory, StringComparison.OrdinalIgnoreCase)
+                    ? activeStyle
+                    : inactiveStyle;
+            }
+        }
+    }
+
     // ═══ Collection Observers ═══
     private void AppItems_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -791,6 +895,64 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                     ? activeStyle
                     : inactiveStyle;
             }
+        }
+    }
+
+    // ═══ Remote Catalog Loading ═══
+
+    /// <summary>
+    /// Populates the store with items from a catalog source, subscribing to property changes.
+    /// Rebuilds category tabs and resets selection.
+    /// </summary>
+    private void PopulateStoreItems(IReadOnlyList<StoreTrendItem> items)
+    {
+        _storeTrendItems.Clear();
+        foreach (var item in items)
+        {
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(StoreTrendItem.IsSelected))
+                    OnPropertyChanged(nameof(StoreSelectionSummary));
+            };
+            _storeTrendItems.Add(item);
+        }
+
+        var categories = _storeTrendItems
+            .Select(i => i.Category)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        _storeCategories = new ReadOnlyCollection<string>(categories);
+    }
+
+    /// <summary>
+    /// Attempts to load the catalog from the remote JSON (GitHub).
+    /// If successful, replaces the current store items with the remote data.
+    /// On failure, the embedded fallback loaded in the constructor remains active.
+    /// </summary>
+    private async Task LoadCatalogAsync()
+    {
+        try
+        {
+            var (items, source) = await Services.CatalogService.LoadAsync().ConfigureAwait(false);
+
+            // Only update if we got data from remote or cache (not embedded, which is already loaded)
+            if (source != "embedded" && items.Count > 0)
+            {
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    PopulateStoreItems(items);
+                    SelectedStoreCategory = _storeCategories.Count > 0 ? _storeCategories[0] : string.Empty;
+                    UpdateStoreCatalogStatus();
+                    StoreTrendItemsView.Refresh();
+                    BuildCategoryTabs();
+                    AppendLog($"📦 Store catalog updated ({source}, {items.Count} apps).");
+                });
+            }
+        }
+        catch
+        {
+            // Non-critical — embedded fallback is already active from the constructor
         }
     }
 

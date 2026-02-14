@@ -20,5 +20,15 @@
 
   <ItemGroup>
     <Resource Include="Images\**" />
+    <EmbeddedResource Include="catalog.json" LogicalName="catalog.json" />
+  </ItemGroup>
+
+  <!-- Exclude the Tests folder from default compile globbing to prevent
+       the WPF XAML temp project (_wpftmp.csproj) from pulling in test files -->
+  <ItemGroup>
+    <Compile Remove="Tests\**" />
+    <Compile Remove="Tests.UI\**" />
+    <None Remove="Tests\**" />
+    <None Remove="Tests.UI\**" />
   </ItemGroup>
 </Project>

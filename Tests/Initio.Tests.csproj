@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <!--
+    Direct DLL reference instead of ProjectReference to avoid WPF XAML
+    temp project compilation issues with xunit. Build the main project
+    first with 'dotnet build' before running 'dotnet test'.
+  -->
+  <ItemGroup>
+    <Reference Include="Initio">
+      <HintPath>..\bin\Debug\net8.0-windows\win-x64\Initio.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

@@ -34,6 +34,7 @@ public partial class MainWindow
                 AppendLog($"winget detected: {available?.Trim()}");
                 StatusText = "winget available — ready to install.";
                 await RefreshInstalledStatesAsync();
+                _ = DetectBloatwareAsync();
             }
             else
             {

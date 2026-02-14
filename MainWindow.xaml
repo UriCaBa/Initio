@@ -467,8 +467,13 @@
                                           Margin="0" />
                             </Border>
                             <!-- Tab content -->
-                            <ContentPresenter Grid.Row="1"
-                                              ContentSource="SelectedContent" />
+                            <!-- Tab content -->
+                            <Border Grid.Row="1"
+                                    AutomationProperties.AutomationId="TabContentBorder"
+                                    AutomationProperties.Name="Tab Content Area">
+                                <ContentPresenter x:Name="PART_SelectedContentHost" 
+                                                  ContentSource="SelectedContent" />
+                            </Border>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -780,22 +785,24 @@
                                 <!-- QUICK PROFILES -->
                                 <TextBlock Style="{StaticResource SidebarLabelStyle}" Text="QUICK PROFILES" />
                                 <WrapPanel Margin="0,0,0,16">
-                                    <Button x:Name="ProfileDefault" Content="⭐ Default" Style="{StaticResource ProfilePillStyle}" Click="ProfileDefault_Click" Margin="0,0,5,5" />
-                                    <Button x:Name="ProfileDev" Content="💻 Dev" Style="{StaticResource ProfilePillStyle}" Click="ProfileDev_Click" Margin="0,0,5,5" />
-                                    <Button x:Name="ProfileHomeOffice" Content="🏠 Office" Style="{StaticResource ProfilePillStyle}" Click="ProfileHomeOffice_Click" Margin="0,0,5,5" />
-                                    <Button x:Name="ProfileGaming" Content="🎮 Gaming" Style="{StaticResource ProfilePillStyle}" Click="ProfileGaming_Click" Margin="0,0,5,5" />
-                                    <Button x:Name="ProfileCustom" Content="⚙ Custom" Style="{StaticResource ProfilePillStyle}" Click="ProfileCustom_Click" Margin="0,0,5,5" />
+                                    <Button x:Name="ProfileDefault" AutomationProperties.AutomationId="ProfileDefault" Content="⭐ Default" Style="{StaticResource ProfilePillStyle}" Click="ProfileDefault_Click" Margin="0,0,5,5" />
+                                    <Button x:Name="ProfileDev" AutomationProperties.AutomationId="ProfileDev" Content="💻 Dev" Style="{StaticResource ProfilePillStyle}" Click="ProfileDev_Click" Margin="0,0,5,5" />
+                                    <Button x:Name="ProfileHomeOffice" AutomationProperties.AutomationId="ProfileHomeOffice" Content="🏠 Office" Style="{StaticResource ProfilePillStyle}" Click="ProfileHomeOffice_Click" Margin="0,0,5,5" />
+                                    <Button x:Name="ProfileGaming" AutomationProperties.AutomationId="ProfileGaming" Content="🎮 Gaming" Style="{StaticResource ProfilePillStyle}" Click="ProfileGaming_Click" Margin="0,0,5,5" />
+                                    <Button x:Name="ProfileCustom" AutomationProperties.AutomationId="ProfileCustom" Content="⚙ Custom" Style="{StaticResource ProfilePillStyle}" Click="ProfileCustom_Click" Margin="0,0,5,5" />
                                 </WrapPanel>
 
                                 <!-- CATALOG ACTIONS -->
                                 <TextBlock Style="{StaticResource SidebarLabelStyle}" Text="CATALOG ACTIONS" />
                                 <Button Content="Remove Selected"
+                                        AutomationProperties.AutomationId="RemoveSelectedBtn"
                                         Style="{StaticResource GhostButtonStyle}"
                                         Click="RemoveSelectedApp_Click"
                                         IsEnabled="{Binding CanRemoveSelectedApp}"
                                         HorizontalAlignment="Stretch"
                                         Margin="0,0,0,5" />
                                 <Button Content="Reset Defaults"
+                                        AutomationProperties.AutomationId="ResetDefaultsBtn"
                                         Style="{StaticResource GhostButtonStyle}"
                                         Click="ResetDefaultCatalog_Click"
                                         IsEnabled="{Binding CanEditCatalog}"
@@ -811,7 +818,7 @@
                                         Padding="8,6"
                                         MinHeight="180"
                                         MaxHeight="400">
-                                    <TextBox x:Name="LogTextBox"
+                                    <TextBox x:Name="LogTextBox" AutomationProperties.AutomationId="LogTextBox"
                                              IsReadOnly="True"
                                              AcceptsReturn="True"
                                              TextWrapping="Wrap"
@@ -883,8 +890,8 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                            <Button Content="Install Selected" Click="InstallSelected_Click" IsEnabled="{Binding CanInstall}" Margin="0,0,5,0" />
-                            <Button Content="Cancel" Style="{StaticResource DangerButtonStyle}" Click="CancelInstall_Click" IsEnabled="{Binding CanCancelInstall}" />
+                            <Button Content="Install Selected" AutomationProperties.AutomationId="InstallBtn" Click="InstallSelected_Click" IsEnabled="{Binding CanInstall}" Margin="0,0,5,0" />
+                            <Button Content="Cancel" AutomationProperties.AutomationId="CancelBtn" Style="{StaticResource DangerButtonStyle}" Click="CancelInstall_Click" IsEnabled="{Binding CanCancelInstall}" />
                         </StackPanel>
                     </Grid>
 
@@ -895,7 +902,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Button Content="Refresh Installed" Style="{StaticResource GhostButtonStyle}"
+                        <Button Content="Refresh Installed" AutomationProperties.AutomationId="RefreshInstalledBtn" Style="{StaticResource GhostButtonStyle}"
                                 Click="RefreshInstalled_Click" IsEnabled="{Binding CanInstall}" />
                         <Border Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
                                 Background="{DynamicResource SurfaceHighBrush}"
@@ -906,11 +913,12 @@
 
                     <!-- Tab area: catalog tabs -->
                     <Border Grid.Row="2" Margin="0,10,0,0" Style="{StaticResource CardStyle}" Padding="0">
-                        <TabControl x:Name="MainTabControl" Style="{StaticResource TabControlStyle}" SelectedIndex="0">
+                        <TabControl x:Name="MainTabControl" AutomationProperties.AutomationId="MainTabControl" Style="{StaticResource TabControlStyle}" SelectedIndex="0">
                             <!-- ═══ TAB 1: My Setup — selected + installed apps ═══ -->
-                            <TabItem x:Name="CatalogTab" Header="📦  My Setup">
+                            <TabItem x:Name="CatalogTab" AutomationProperties.AutomationId="CatalogTab" Header="📦  My Setup">
                                 <Border Padding="12,8">
-                                    <ListView ItemsSource="{Binding AppItemsView}"
+                                    <ListView x:Name="CatalogListView" AutomationProperties.AutomationId="CatalogListView"
+                                              ItemsSource="{Binding AppItemsView}"
                                               SelectionMode="Single"
                                               SelectedItem="{Binding SelectedAppItem, Mode=TwoWay}"
                                               VirtualizingPanel.IsVirtualizing="True"
@@ -991,7 +999,7 @@
                             </TabItem>
 
                             <!-- ═══ TAB 2: Store by Category ═══ -->
-                            <TabItem Header="🏪  Store by Category">
+                            <TabItem AutomationProperties.AutomationId="StoreTab" Header="🏪  Store by Category">
                                 <Border Padding="12,8">
                                     <Grid>
                                         <Grid.RowDefinitions>
@@ -1002,7 +1010,7 @@
                                         </Grid.RowDefinitions>
 
                                         <!-- Category tabs (horizontal pills) -->
-                                        <WrapPanel x:Name="CategoryTabsPanel" Grid.Row="0" Margin="0,4,0,0" />
+                                        <WrapPanel x:Name="CategoryTabsPanel" AutomationProperties.AutomationId="CategoryTabsPanel" Grid.Row="0" Margin="0,4,0,0" />
 
                                         <!-- Search -->
                                         <Grid Grid.Row="1" Margin="0,8,0,0">
@@ -1013,7 +1021,7 @@
                                         </Grid>
 
                                         <!-- Store list -->
-                                        <ListView x:Name="StoreListView" Grid.Row="2" Margin="0,8,0,0"
+                                        <ListView x:Name="StoreListView" AutomationProperties.AutomationId="StoreListView" Grid.Row="2" Margin="0,8,0,0"
                                                   ItemsSource="{Binding StoreTrendItemsView}"
                                                   SelectionMode="Single"
                                                   SelectedItem="{Binding SelectedStoreTrendItem, Mode=TwoWay}"
@@ -1087,9 +1095,9 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Button Content="Select All" Style="{StaticResource GhostButtonStyle}"
+                                            <Button Content="Select All" AutomationProperties.AutomationId="StoreSelectAllBtn" Style="{StaticResource GhostButtonStyle}"
                                                     Click="StoreSelectAll_Click" Margin="0,0,5,0" />
-                                            <Button Grid.Column="1" Content="Select None" Style="{StaticResource GhostButtonStyle}"
+                                            <Button Grid.Column="1" Content="Select None" AutomationProperties.AutomationId="StoreSelectNoneBtn" Style="{StaticResource GhostButtonStyle}"
                                                     Click="StoreSelectNone_Click" Margin="0,0,5,0" />
                                             <Border Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center"
                                                     Background="{DynamicResource SurfaceHighBrush}"
@@ -1097,6 +1105,7 @@
                                                 <TextBlock Text="{Binding StoreSelectionSummary}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" />
                                             </Border>
                                             <Button Grid.Column="4" Content="Add to My Setup"
+                                                    AutomationProperties.AutomationId="StoreAddToSetupBtn"
                                                     Click="AddStoreTrendApp_Click" />
                                         </Grid>
                                     </Grid>
@@ -1104,7 +1113,7 @@
                             </TabItem>
 
                             <!-- ═══ TAB 3: Full Search (live winget) ═══ -->
-                            <TabItem Header="🔍  Full Search">
+                            <TabItem AutomationProperties.AutomationId="SearchTab" Header="🔍  Full Search">
                                 <Border Padding="12,8">
                                     <Grid>
                                         <Grid.RowDefinitions>
@@ -1119,13 +1128,14 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBox x:Name="SearchTextBox"
+                                            <TextBox x:Name="SearchTextBox" AutomationProperties.AutomationId="SearchTextBox"
                                                      Text="{Binding WingetSearchQuery, UpdateSourceTrigger=PropertyChanged}"
                                                      KeyDown="SearchTextBox_KeyDown"
                                                      VerticalContentAlignment="Center"
                                                      Tag="Search apps (e.g. 'vscode', 'pdf')..." 
                                                      Style="{StaticResource SearchBoxStyle}"/> 
                                             <Button Grid.Column="1" Content="🔍 Search winget"
+                                                    AutomationProperties.AutomationId="SearchWingetBtn"
                                                     Click="WingetSearch_Click" Margin="8,0,0,0"
                                                     IsEnabled="{Binding IsSearching, Converter={StaticResource InverseBoolConverter}}" />
                                         </Grid>
@@ -1175,15 +1185,133 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Button Content="Select All" Style="{StaticResource GhostButtonStyle}"
+                                            <Button Content="Select All" AutomationProperties.AutomationId="SearchSelectAllBtn" Style="{StaticResource GhostButtonStyle}"
                                                     Click="SearchSelectAll_Click" Margin="0,0,5,0" />
-                                            <Button Grid.Column="1" Content="Select None" Style="{StaticResource GhostButtonStyle}"
+                                            <Button Grid.Column="1" Content="Select None" AutomationProperties.AutomationId="SearchSelectNoneBtn" Style="{StaticResource GhostButtonStyle}"
                                                     Click="SearchSelectNone_Click" Margin="0,0,5,0" />
                                             <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="11" Margin="10,0,0,0"
                                                        Text="{Binding StoreSelectionSummary}"
                                                        Foreground="{DynamicResource TextSecondaryBrush}" />
                                             <Button Grid.Column="3" Content="Add to My Setup"
+                                                    AutomationProperties.AutomationId="SearchAddToSetupBtn"
                                                     Click="AddStoreTrendApp_Click" />
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </TabItem>
+
+                            <!-- ═══ TAB 4: Windows Debloater ═══ -->
+                            <TabItem AutomationProperties.AutomationId="DebloaterTab" Header="🧹  Debloater">
+                                <Border Padding="12,8">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Category pills -->
+                                        <WrapPanel x:Name="BloatwareCategoryTabsPanel"
+                                                   AutomationProperties.AutomationId="BloatwareCategoryTabsPanel"
+                                                   Grid.Row="0" Margin="0,4,0,0" />
+
+                                        <!-- Bloatware list -->
+                                        <ListView x:Name="BloatwareListView"
+                                                  AutomationProperties.AutomationId="BloatwareListView"
+                                                  Grid.Row="1" Margin="0,8,0,0"
+                                                  ItemsSource="{Binding BloatwareItemsView}"
+                                                  SelectionMode="Single"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"
+                                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                                  VirtualizingPanel.IsVirtualizing="True"
+                                                  VirtualizingPanel.ScrollUnit="Pixel">
+                                            <ListView.View>
+                                                <GridView>
+                                                    <GridViewColumn Width="42" Header="✓">
+                                                        <GridViewColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <CheckBox HorizontalAlignment="Center"
+                                                                          Style="{StaticResource GlobalCheckBoxStyle}"
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          IsEnabled="{Binding IsInstalled}"
+                                                                          IsHitTestVisible="True" />
+                                                            </DataTemplate>
+                                                        </GridViewColumn.CellTemplate>
+                                                    </GridViewColumn>
+                                                    <GridViewColumn Width="180" Header="Name" DisplayMemberBinding="{Binding Name}" />
+                                                    <GridViewColumn Width="160" Header="Category" DisplayMemberBinding="{Binding Category}" />
+                                                    <GridViewColumn Width="200" Header="Package" DisplayMemberBinding="{Binding PackageName}" />
+                                                    <GridViewColumn Width="100" Header="Status">
+                                                        <GridViewColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding RemovalStatus}">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding RemovalStatus}" Value="Detected">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding RemovalStatus}" Value="Removed">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding RemovalStatus}" Value="Failed">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding RemovalStatus}" Value="Removing...">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                            </DataTemplate>
+                                                        </GridViewColumn.CellTemplate>
+                                                    </GridViewColumn>
+                                                </GridView>
+                                            </ListView.View>
+                                        </ListView>
+
+                                        <!-- Footer -->
+                                        <Grid Grid.Row="2" Margin="0,8,0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Content="Select All"
+                                                    AutomationProperties.AutomationId="DebloatSelectAllBtn"
+                                                    Style="{StaticResource GhostButtonStyle}"
+                                                    Click="DebloatSelectAll_Click" Margin="0,0,5,0" />
+                                            <Button Grid.Column="1" Content="Select None"
+                                                    AutomationProperties.AutomationId="DebloatSelectNoneBtn"
+                                                    Style="{StaticResource GhostButtonStyle}"
+                                                    Click="DebloatSelectNone_Click" Margin="0,0,5,0" />
+                                            <Button Grid.Column="2" Content="Scan System"
+                                                    AutomationProperties.AutomationId="ScanBloatwareBtn"
+                                                    Style="{StaticResource GhostButtonStyle}"
+                                                    Click="ScanBloatware_Click"
+                                                    IsEnabled="{Binding CanDebloat}" Margin="0,0,5,0" />
+                                            <Border Grid.Column="3" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Background="{DynamicResource SurfaceHighBrush}"
+                                                    CornerRadius="8" Padding="10,4" Margin="8,0,0,0">
+                                                <TextBlock Text="{Binding BloatwareSummary}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" />
+                                            </Border>
+                                            <Button Grid.Column="4" Content="Cancel"
+                                                    AutomationProperties.AutomationId="CancelDebloatBtn"
+                                                    Style="{StaticResource DangerButtonStyle}"
+                                                    Click="CancelDebloat_Click"
+                                                    IsEnabled="{Binding CanCancelDebloat}" Margin="0,0,5,0" />
+                                            <Button Grid.Column="5" Content="Remove Selected"
+                                                    AutomationProperties.AutomationId="RemoveBloatwareBtn"
+                                                    Style="{StaticResource DangerButtonStyle}"
+                                                    Click="RemoveBloatware_Click"
+                                                    IsEnabled="{Binding CanDebloat}" />
                                         </Grid>
                                     </Grid>
                                 </Border>
