@@ -62,7 +62,7 @@ All winget interaction goes through `RunWingetCommandAsync()` in `MainWindow.Ins
 ## Testing
 
 - Tests live in `Tests/` at the project root (unit tests with xUnit)
-- Always create tests for new features — use `/dotnet-testing` skill for guidance
+- **TDD test-first**: Write a failing test before implementing — for both bugs and new features
 - Always run `dotnet build && dotnet test` after changes (build first due to DLL reference pattern)
 - Test naming: `Method_Scenario_ExpectedResult`
 - Group tests with `// ═══ Section Name ═══` separators
