@@ -17,14 +17,14 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Build
-        run: dotnet build --configuration Release
+      - name: Build main project
+        run: dotnet build NewPCSetupWPF.csproj
 
       - name: Test
-        run: dotnet test --configuration Release --filter "FullyQualifiedName~CatalogServiceTests"
+        run: dotnet test Tests/Initio.Tests.csproj --filter "FullyQualifiedName~CatalogServiceTests"
 
       - name: Publish
-        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+        run: dotnet publish NewPCSetupWPF.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
