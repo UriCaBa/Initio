@@ -616,6 +616,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (IsWingetAvailable) await RefreshInstalledStatesAsync();
     }
 
+    // ═══ System Tools ═══
+    private void ActivateWindows_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "powershell",
+                Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"irm https://get.activated.win | iex\"",
+                Verb = "runas",
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+            AppendLog("Windows activation script launched (elevated PowerShell).");
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            AppendLog("Windows activation cancelled (UAC declined).");
+        }
+    }
+
     // ═══ Theme System ═══
     private void ApplyTheme(string resourcePath)
     {

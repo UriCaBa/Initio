@@ -835,7 +835,16 @@
                                              VerticalContentAlignment="Top" />
                                 </Border>
                                 
-                                <!-- SIMULATION MODE REMOVED -->
+                                <!-- SYSTEM TOOLS -->
+                                <TextBlock Style="{StaticResource SidebarLabelStyle}" Text="SYSTEM TOOLS" Margin="4,16,0,8" />
+                                <Button Content="Activate Windows"
+                                        AutomationProperties.AutomationId="ActivateWindowsBtn"
+                                        Style="{StaticResource GhostButtonStyle}"
+                                        Click="ActivateWindows_Click"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,0,16" />
+
+                                <!-- INSTALL OPTIONS -->
                                 <CheckBox Content="Silent Install" 
                                           IsChecked="{Binding IsSilentInstall}"
                                           Style="{StaticResource GlobalCheckBoxStyle}"
