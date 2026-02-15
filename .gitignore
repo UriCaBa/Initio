@@ -25,3 +25,7 @@ publish/
 # Local data
 .codex-local/
 settings.json
+
+# Security audit reports (contain vulnerability details)
+AUDIT.md
+AUDIT-PLAN.md
