@@ -617,8 +617,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     // ═══ System Tools ═══
+    private bool _isActivationRunning;
+
     private void ActivateWindows_Click(object sender, RoutedEventArgs e)
     {
+        if (_isActivationRunning)
+        {
+            AppendLog("Activation script is already running.");
+            return;
+        }
+
+        var result = MessageBox.Show(
+            "This will open an elevated PowerShell window and download Microsoft Activation Scripts (MAS) from the internet.\n\n" +
+            "You will be prompted by UAC to grant administrator privileges.\n\nProceed?",
+            "Activate Windows / Office",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes) return;
+
         try
         {
             var psi = new System.Diagnostics.ProcessStartInfo
@@ -628,12 +645,26 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 Verb = "runas",
                 UseShellExecute = true
             };
-            System.Diagnostics.Process.Start(psi);
+            var process = System.Diagnostics.Process.Start(psi);
+            if (process is not null)
+            {
+                _isActivationRunning = true;
+                _ = Task.Run(() =>
+                {
+                    process.WaitForExit();
+                    _isActivationRunning = false;
+                    Dispatcher.Invoke(() => AppendLog("Windows activation script closed."));
+                });
+            }
             AppendLog("Windows activation script launched (elevated PowerShell).");
         }
         catch (System.ComponentModel.Win32Exception)
         {
             AppendLog("Windows activation cancelled (UAC declined).");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Windows activation failed: {ex.Message}");
         }
     }
 
