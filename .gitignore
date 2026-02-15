@@ -25,6 +25,7 @@ publish/
 # Local data
 .codex-local/
 settings.json
+!.claude/settings.json
 
 # Security audit reports (contain vulnerability details)
 AUDIT.md
