@@ -28,7 +28,7 @@ public sealed class StoreTrendItem : INotifyPropertyChanged
     public string WingetId { get; }
     public double Rating { get; }
     public string PopularitySignal { get; }
-    public int TrendScore => Math.Max(42, 100 - ((Rank - 1) * 3));
+    public int TrendScore => Math.Max(42, 100 - ((Rank - 1) * 2));
 
     /// <summary>Whether this store item is checked/selected by the user for adding to the install catalog.</summary>
     public bool IsSelected

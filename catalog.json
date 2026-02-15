@@ -5,7 +5,6 @@
     {
       "name": "Productivity",
       "apps": [
-        { "name": "Microsoft PowerToys", "wingetId": "Microsoft.PowerToys" },
         { "name": "7-Zip", "wingetId": "7zip.7zip" },
         { "name": "Notepad++", "wingetId": "Notepad++.Notepad++" },
         { "name": "LibreOffice", "wingetId": "TheDocumentFoundation.LibreOffice" },
@@ -20,11 +19,8 @@
         { "name": "Files", "wingetId": "FilesCommunity.Files" },
         { "name": "EarTrumpet", "wingetId": "File-New-Project.EarTrumpet" },
         { "name": "NanaZip", "wingetId": "M2Team.NanaZip" },
-        { "name": "Everything", "wingetId": "voidtools.Everything" },
         { "name": "ShareX", "wingetId": "ShareX.ShareX" },
         { "name": "CrystalDiskInfo", "wingetId": "CrystalDewWorld.CrystalDiskInfo" },
-        { "name": "Bitwarden", "wingetId": "Bitwarden.Bitwarden" },
-        { "name": "KeePassXC", "wingetId": "KeePassXCTeam.KeePassXC" },
         { "name": "AutoHotKey v2", "wingetId": "AutoHotkey.AutoHotkey" },
         { "name": "Flow Launcher", "wingetId": "Flow-Launcher.Flow-Launcher" },
         { "name": "QuickLook", "wingetId": "QL-Win.QuickLook" },
@@ -32,7 +28,7 @@
         { "name": "Greenshot", "wingetId": "Greenshot.Greenshot" },
         { "name": "Ditto", "wingetId": "Ditto.Ditto" },
         { "name": "Twinkle Tray", "wingetId": "xanderfrangos.twinkletray" },
-        { "name": "TaskbarX", "wingetId": "ChrisAndri);TaskbarX" },
+        { "name": "TaskbarX", "wingetId": "ChrisAndriessen.TaskbarX" },
         { "name": "SumatraPDF", "wingetId": "SumatraPDF.SumatraPDF" },
         { "name": "Calibre", "wingetId": "calibre.calibre" }
       ]
@@ -159,8 +155,6 @@
         { "name": "MSI Afterburner", "wingetId": "Guru3D.Afterburner" },
         { "name": "Playnite", "wingetId": "Playnite.Playnite" },
         { "name": "Prism Launcher", "wingetId": "PrismLauncher.PrismLauncher" },
-        { "name": "OBS Studio", "wingetId": "OBSProject.OBSStudio" },
-        { "name": "Discord", "wingetId": "Discord.Discord" },
         { "name": "CurseForge", "wingetId": "CurseForge.CurseForge" },
         { "name": "Vortex", "wingetId": "NexusMods.Vortex" },
         { "name": "Overwolf", "wingetId": "Overwolf.Overwolf" },
@@ -235,7 +229,6 @@
         { "name": "Scoop", "wingetId": "ScoopInstaller.Scoop" },
         { "name": "Dism++", "wingetId": "Chuyu-Team.Dism++" },
         { "name": "NSudo", "wingetId": "M2Team.NsudoLG" },
-        { "name": "AutoRuns", "wingetId": "Microsoft.Sysinternals.Autoruns" },
         { "name": "TCPView", "wingetId": "Microsoft.Sysinternals.TCPView" },
         { "name": "Recuva", "wingetId": "Piriform.Recuva" },
         { "name": "TestDisk", "wingetId": "CGSecurity.TestDisk" },

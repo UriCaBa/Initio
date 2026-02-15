@@ -127,17 +127,7 @@ public partial class MainWindow
 
                 ProgressValue = position;
 
-                if (position < total)
-                {
-                    var elapsed = stopwatch.Elapsed;
-                    var avgPerItem = elapsed / position;
-                    var remaining = avgPerItem * (total - position);
-                    EtaText = $"ETA: {remaining:mm\\:ss} remaining";
-                }
-                else
-                {
-                    EtaText = $"Completed in {stopwatch.Elapsed:mm\\:ss}";
-                }
+                UpdateEta(stopwatch, position, total);
             }
 
             StatusText = $"Done — {succeeded} removed, {failed} failed.";

@@ -10,7 +10,6 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -22,7 +21,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private const string ThemePrefix = "/Themes/Theme.";
     private const string DefaultProfileKey = "default";
     private const string CustomProfileKey = "custom";
-    private static readonly Regex WingetIdPattern = new(@"^[A-Za-z0-9][A-Za-z0-9\.\-\+_]*$", RegexOptions.Compiled);
 
     /// <summary>Default app catalog — the user's chosen defaults for a fresh PC.</summary>
     private static readonly IReadOnlyList<AppDefinition> DefaultCatalog =
@@ -72,7 +70,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string _storeTrendQuery = string.Empty;
     private string _selectedStoreCategory = string.Empty;
     private string _logText = "Logs will appear here when you run an installation.";
-    internal bool _hasInstallSession;
+    private bool _hasInstallSession;
 
     public MainWindow()
     {
@@ -603,7 +601,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         SelectedAppItem = null;
         AppItemsView.Refresh();
         AppendLog($"Removed: {app.Name} ({app.WingetId})");
-        AppendLog($"Removed: {app.Name}.");
         OnPropertyChanged(nameof(SelectionSummary));
     }
 
@@ -611,7 +608,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         ReloadDefaultCatalog();
         SelectedProfile = GetProfile(DefaultProfileKey);
-        AppendLog("Default catalog restored.");
         AppendLog("Default catalog restored.");
         if (IsWingetAvailable) await RefreshInstalledStatesAsync();
     }
@@ -1008,11 +1004,25 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    // ═══ ETA Helper ═══
+    private void UpdateEta(System.Diagnostics.Stopwatch sw, int position, int total)
+    {
+        if (position < total)
+        {
+            var remaining = sw.Elapsed / position * (total - position);
+            EtaText = $"ETA: {remaining:mm\\:ss} remaining";
+        }
+        else
+        {
+            EtaText = $"Completed in {sw.Elapsed:mm\\:ss}";
+        }
+    }
+
     // ═══ Logging ═══
     internal void ClearLogs()
     {
         if (Dispatcher.CheckAccess()) { ClearLogsCore(); return; }
-        Dispatcher.Invoke(ClearLogsCore);
+        Dispatcher.InvokeAsync(ClearLogsCore);
     }
 
     private void ClearLogsCore()
@@ -1025,7 +1035,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (string.IsNullOrWhiteSpace(message)) return;
         var line = $"[{DateTime.Now:HH:mm:ss}] {message.Trim()}";
         if (Dispatcher.CheckAccess()) { AppendLogCore(line); return; }
-        Dispatcher.Invoke(() => AppendLogCore(line));
+        Dispatcher.InvokeAsync(() => AppendLogCore(line));
     }
 
     internal void AppendLogCore(string line)
@@ -1067,5 +1077,5 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // ═══ Records ═══
     public sealed record SelectionProfile(string Key, string DisplayName, HashSet<string> SelectedWingetIds, bool IsCustom = false);
     public sealed record ThemeOption(string DisplayName, string ResourcePath);
-    internal sealed record AppDefinition(string Name, string Category, string WingetId);
+    private sealed record AppDefinition(string Name, string Category, string WingetId);
 }

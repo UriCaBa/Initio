@@ -23,11 +23,12 @@ public static class WingetSearchService
     public static async Task<List<WingetSearchResult>> SearchAsync(
         string query, int maxResults = 50, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(query))
+        var safeQuery = InputValidation.SanitizeSearchQuery(query);
+        if (string.IsNullOrEmpty(safeQuery))
             return [];
 
         // Run the entire process on a background thread to avoid any UI blocking
-        return await Task.Run(() => RunWingetSearch(query, maxResults, cancellationToken), cancellationToken);
+        return await Task.Run(() => RunWingetSearch(safeQuery, maxResults, cancellationToken), cancellationToken);
     }
 
     /// <summary>

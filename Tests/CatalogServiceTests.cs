@@ -103,6 +103,44 @@ public class CatalogServiceTests
         }
     }
 
+    // ═══ Data Integrity ═══
+
+    [Fact]
+    public void LoadEmbeddedCatalog_NoDuplicateWingetIds()
+    {
+        var items = CatalogService.LoadEmbeddedCatalog();
+        var duplicates = items.GroupBy(i => i.WingetId, StringComparer.OrdinalIgnoreCase)
+                              .Where(g => g.Count() > 1)
+                              .Select(g => g.Key)
+                              .ToList();
+
+        Assert.Empty(duplicates);
+    }
+
+    [Fact]
+    public void EmbeddedCatalogJson_AllWingetIdsMatchValidationPattern()
+    {
+        // Read raw embedded JSON to catch malformed IDs BEFORE ParseCatalogJson filters them out
+        var assembly = typeof(CatalogService).Assembly;
+        using var stream = assembly.GetManifestResourceStream("catalog.json");
+        Assert.NotNull(stream);
+        using var reader = new System.IO.StreamReader(stream);
+        var doc = System.Text.Json.JsonDocument.Parse(reader.ReadToEnd());
+
+        var invalid = new List<string>();
+        foreach (var category in doc.RootElement.GetProperty("categories").EnumerateArray())
+        {
+            foreach (var app in category.GetProperty("apps").EnumerateArray())
+            {
+                var wingetId = app.GetProperty("wingetId").GetString() ?? "";
+                if (!NewPCSetupWPF.Services.InputValidation.IsValidWingetId(wingetId))
+                    invalid.Add($"{app.GetProperty("name").GetString()}: {wingetId}");
+            }
+        }
+
+        Assert.Empty(invalid);
+    }
+
     // ═══ Well-Known Apps ═══
 
     [Theory]
@@ -159,12 +197,38 @@ public class CatalogServiceTests
     {
         var top = new StoreTrendItem("Test", 1, "First", "Test.First", 4.9, "Top ranked");
         var mid = new StoreTrendItem("Test", 10, "Tenth", "Test.Tenth", 4.5, "Top free");
-        var low = new StoreTrendItem("Test", 20, "Twentieth", "Test.Twentieth", 4.1, "Rising");
+        var low = new StoreTrendItem("Test", 30, "Thirtieth", "Test.Thirtieth", 3.7, "New");
 
-        // TrendScore = Max(42, 100 - (Rank-1)*3)
+        // TrendScore = Max(42, 100 - (Rank-1)*2)
         Assert.Equal(100, top.TrendScore);   // 100 - 0 = 100
-        Assert.Equal(73, mid.TrendScore);    // 100 - 27 = 73
-        Assert.Equal(43, low.TrendScore);    // 100 - 57 = 43 (clamped at 42 min)
+        Assert.Equal(82, mid.TrendScore);    // 100 - 18 = 82
+        Assert.Equal(42, low.TrendScore);    // 100 - 58 = 42 (clamped)
+    }
+
+    [Fact]
+    public void StoreTrendItem_TrendScoreDifferentiatesAllRanks()
+    {
+        // Verify that ranks 1-30 all produce distinct scores
+        var scores = Enumerable.Range(1, 30)
+            .Select(r => new StoreTrendItem("Test", r, $"App{r}", $"Test.App{r}", 4.0, "Test").TrendScore)
+            .ToList();
+
+        Assert.Equal(30, scores.Distinct().Count());
+    }
+
+    // ═══ Model SetField ═══
+
+    [Fact]
+    public void AppItem_SetFieldWithBool_NoBoxingIssue()
+    {
+        var item = new NewPCSetupWPF.Models.AppItem { Name = "Test", Category = "Test", WingetId = "Test.Test" };
+        var changedProps = new List<string>();
+        item.PropertyChanged += (s, e) => changedProps.Add(e.PropertyName!);
+
+        item.IsSelected = true;
+        item.IsSelected = true; // same value — should NOT fire
+
+        Assert.Single(changedProps, prop => prop == nameof(NewPCSetupWPF.Models.AppItem.IsSelected));
     }
 
     // ═══ Async Load Flow ═══

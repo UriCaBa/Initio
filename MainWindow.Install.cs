@@ -13,6 +13,8 @@ public partial class MainWindow
     internal CancellationTokenSource? _installCancellationTokenSource;
     private static readonly TimeSpan SingleAppTimeout = TimeSpan.FromMinutes(15);
     private const int MaxInstallRetries = 2;
+    private const string WingetSourceFlags = "--accept-source-agreements";
+    private const string WingetInstallFlags = "--accept-package-agreements --accept-source-agreements";
 
     // ═══ Window Load ═══
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -72,7 +74,7 @@ public partial class MainWindow
 
     internal async Task RefreshInstalledStatesAsync()
     {
-        var output = await RunWingetCommandAsync("list --accept-source-agreements");
+        var output = await RunWingetCommandAsync($"list {WingetSourceFlags}");
         if (output is null) return;
 
         _knownInstalledIds.Clear();
@@ -172,18 +174,7 @@ public partial class MainWindow
 
                 ProgressValue = position;
 
-                // Calculate ETA based on average time per app
-                if (position < total)
-                {
-                    var elapsed = stopwatch.Elapsed;
-                    var avgPerApp = elapsed / position;
-                    var remaining = avgPerApp * (total - position);
-                    EtaText = $"ETA: {remaining:mm\\:ss} remaining";
-                }
-                else
-                {
-                    EtaText = $"Completed in {stopwatch.Elapsed:mm\\:ss}";
-                }
+                UpdateEta(stopwatch, position, total);
             }
 
             StatusText = $"Done — {succeeded} installed, {failed} failed.";
@@ -219,8 +210,14 @@ public partial class MainWindow
             ct.ThrowIfCancellationRequested();
             if (attempt > 1) AppendLog($"  Retry ({attempt}/{MaxInstallRetries}) for {app.Name}…");
 
+            if (!Services.InputValidation.IsValidWingetId(app.WingetId))
+            {
+                AppendLog($"  Skipping {app.Name}: invalid WingetId '{app.WingetId}'.");
+                return false;
+            }
+
             var silentFlag = IsSilentInstall ? "--silent" : "";
-            var args = $"install --id {app.WingetId} {silentFlag} --accept-package-agreements --accept-source-agreements";
+            var args = $"install --id \"{app.WingetId}\" {silentFlag} {WingetInstallFlags}";
             
             var result = await RunWingetCommandAsync(args, SingleAppTimeout, ct);
 
@@ -245,7 +242,7 @@ public partial class MainWindow
     private async Task<bool> VerifyAppInstalledAsync(string query, CancellationToken ct)
     {
         // 'winget list <query>' works for both ID and Name
-        var output = await RunWingetCommandAsync($"list \"{query}\" --accept-source-agreements", TimeSpan.FromSeconds(15), ct);
+        var output = await RunWingetCommandAsync($"list \"{query}\" {WingetSourceFlags}", TimeSpan.FromSeconds(15), ct);
         return output != null && output.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 
