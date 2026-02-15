@@ -19,13 +19,18 @@ public partial class App : Application
         };
     }
 
-    private void LogCrash(Exception ex, string source)
+    private static void LogCrash(Exception ex, string source)
     {
         string message = $"[{DateTime.Now}] Crash in {source}: {ex.Message}\n{ex.StackTrace}\n\nInner: {ex.InnerException?.Message}";
         try
         {
-            System.IO.File.WriteAllText("crash_log.txt", message);
-            MessageBox.Show($"Application Crashed!\n\n{ex.Message}\n\nSee crash_log.txt for details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            var crashDir = System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Initio");
+            System.IO.Directory.CreateDirectory(crashDir);
+            var crashPath = System.IO.Path.Combine(crashDir, "crash_log.txt");
+            System.IO.File.WriteAllText(crashPath, message);
+            MessageBox.Show($"Application Crashed!\n\n{ex.Message}\n\nSee {crashPath} for details.", "Critical Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         catch { /* Panic */ }
     }

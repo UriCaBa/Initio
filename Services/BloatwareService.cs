@@ -103,6 +103,8 @@ public static class BloatwareService
         string packageName,
         CancellationToken ct = default)
     {
+        if (!InputValidation.IsValidPackageName(packageName)) return false;
+
         var script = $"Get-AppxPackage '*{packageName}*' | Remove-AppxPackage -ErrorAction Stop";
         var output = await RunPowerShellAsync(script, RemovalTimeoutSeconds, ct);
         return output is not null;
@@ -112,6 +114,8 @@ public static class BloatwareService
         string packageName,
         CancellationToken ct = default)
     {
+        if (!InputValidation.IsValidPackageName(packageName)) return false;
+
         var output = await RunPowerShellAsync(
             $"Get-AppxPackage '*{packageName}*' | Select-Object -ExpandProperty Name",
             10, ct);

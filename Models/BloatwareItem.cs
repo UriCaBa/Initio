@@ -45,7 +45,7 @@ public sealed class BloatwareItem : INotifyPropertyChanged
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
-        if (Equals(field, value))
+        if (EqualityComparer<T>.Default.Equals(field, value))
         {
             return false;
         }

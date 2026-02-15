@@ -28,6 +28,9 @@ public static class CatalogService
     /// <summary>Maximum time to wait for the remote catalog before falling back.</summary>
     private static readonly TimeSpan DownloadTimeout = TimeSpan.FromSeconds(5);
 
+    /// <summary>Shared HttpClient instance — reused across calls to avoid socket exhaustion.</summary>
+    private static readonly HttpClient SharedHttpClient = new() { Timeout = DownloadTimeout };
+
     /// <summary>Local cache file path: %APPDATA%/Initio/catalog_cache.json</summary>
     private static readonly string CachePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -42,8 +45,7 @@ public static class CatalogService
         // 1. Try remote
         try
         {
-            using var http = new HttpClient { Timeout = DownloadTimeout };
-            var json = await http.GetStringAsync(RemoteUrl).ConfigureAwait(false);
+            var json = await SharedHttpClient.GetStringAsync(RemoteUrl).ConfigureAwait(false);
             var items = ParseCatalogJson(json);
 
             if (items.Count > 0)
@@ -118,11 +120,17 @@ public static class CatalogService
             int rank = 0;
             foreach (var app in appsElement.EnumerateArray())
             {
-                rank++;
-                var name = app.GetProperty("name").GetString() ?? "Unknown";
-                var wingetId = app.GetProperty("wingetId").GetString() ?? "";
+                if (!app.TryGetProperty("name", out var nameEl) ||
+                    !app.TryGetProperty("wingetId", out var wingetIdEl))
+                    continue;
+
+                var name = nameEl.GetString() ?? "Unknown";
+                var wingetId = wingetIdEl.GetString() ?? "";
 
                 if (string.IsNullOrWhiteSpace(wingetId)) continue;
+                if (!InputValidation.IsValidWingetId(wingetId)) continue;
+
+                rank++;
 
                 // Assign popularity signal based on rank position (order in JSON = popularity)
                 var signal = rank switch
