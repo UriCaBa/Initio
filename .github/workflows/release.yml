@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: windows-latest
@@ -23,10 +26,10 @@ jobs:
         run: dotnet test Tests/Initio.Tests.csproj
 
       - name: Publish
-        run: dotnet publish NewPCSetupWPF.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+        run: dotnet publish NewPCSetupWPF.csproj -c Release -o ./publish
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: bin/Release/net8.0-windows/win-x64/publish/Initio.exe
+          files: publish/Initio.exe
           generate_release_notes: true
