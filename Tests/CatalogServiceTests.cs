@@ -118,12 +118,25 @@ public class CatalogServiceTests
     }
 
     [Fact]
-    public void LoadEmbeddedCatalog_AllWingetIdsMatchValidationPattern()
+    public void EmbeddedCatalogJson_AllWingetIdsMatchValidationPattern()
     {
-        var items = CatalogService.LoadEmbeddedCatalog();
-        var invalid = items.Where(i => !NewPCSetupWPF.Services.InputValidation.IsValidWingetId(i.WingetId))
-                           .Select(i => $"{i.Name}: {i.WingetId}")
-                           .ToList();
+        // Read raw embedded JSON to catch malformed IDs BEFORE ParseCatalogJson filters them out
+        var assembly = typeof(CatalogService).Assembly;
+        using var stream = assembly.GetManifestResourceStream("catalog.json");
+        Assert.NotNull(stream);
+        using var reader = new System.IO.StreamReader(stream);
+        var doc = System.Text.Json.JsonDocument.Parse(reader.ReadToEnd());
+
+        var invalid = new List<string>();
+        foreach (var category in doc.RootElement.GetProperty("categories").EnumerateArray())
+        {
+            foreach (var app in category.GetProperty("apps").EnumerateArray())
+            {
+                var wingetId = app.GetProperty("wingetId").GetString() ?? "";
+                if (!NewPCSetupWPF.Services.InputValidation.IsValidWingetId(wingetId))
+                    invalid.Add($"{app.GetProperty("name").GetString()}: {wingetId}");
+            }
+        }
 
         Assert.Empty(invalid);
     }
@@ -215,7 +228,7 @@ public class CatalogServiceTests
         item.IsSelected = true;
         item.IsSelected = true; // same value — should NOT fire
 
-        Assert.Single(changedProps, nameof(NewPCSetupWPF.Models.AppItem.IsSelected));
+        Assert.Single(changedProps, prop => prop == nameof(NewPCSetupWPF.Models.AppItem.IsSelected));
     }
 
     // ═══ Async Load Flow ═══

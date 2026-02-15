@@ -13,7 +13,8 @@ public partial class MainWindow
     internal CancellationTokenSource? _installCancellationTokenSource;
     private static readonly TimeSpan SingleAppTimeout = TimeSpan.FromMinutes(15);
     private const int MaxInstallRetries = 2;
-    private const string WingetAcceptFlags = "--accept-package-agreements --accept-source-agreements";
+    private const string WingetSourceFlags = "--accept-source-agreements";
+    private const string WingetInstallFlags = "--accept-package-agreements --accept-source-agreements";
 
     // ═══ Window Load ═══
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -73,7 +74,7 @@ public partial class MainWindow
 
     internal async Task RefreshInstalledStatesAsync()
     {
-        var output = await RunWingetCommandAsync($"list {WingetAcceptFlags}");
+        var output = await RunWingetCommandAsync($"list {WingetSourceFlags}");
         if (output is null) return;
 
         _knownInstalledIds.Clear();
@@ -216,7 +217,7 @@ public partial class MainWindow
             }
 
             var silentFlag = IsSilentInstall ? "--silent" : "";
-            var args = $"install --id \"{app.WingetId}\" {silentFlag} {WingetAcceptFlags}";
+            var args = $"install --id \"{app.WingetId}\" {silentFlag} {WingetInstallFlags}";
             
             var result = await RunWingetCommandAsync(args, SingleAppTimeout, ct);
 
@@ -241,7 +242,7 @@ public partial class MainWindow
     private async Task<bool> VerifyAppInstalledAsync(string query, CancellationToken ct)
     {
         // 'winget list <query>' works for both ID and Name
-        var output = await RunWingetCommandAsync($"list \"{query}\" {WingetAcceptFlags}", TimeSpan.FromSeconds(15), ct);
+        var output = await RunWingetCommandAsync($"list \"{query}\" {WingetSourceFlags}", TimeSpan.FromSeconds(15), ct);
         return output != null && output.Contains(query, StringComparison.OrdinalIgnoreCase);
     }
 
