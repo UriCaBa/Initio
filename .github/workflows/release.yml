@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build main project
+        run: dotnet build NewPCSetupWPF.csproj
+
+      - name: Test
+        run: dotnet test Tests/Initio.Tests.csproj
+
+      - name: Publish
+        run: dotnet publish NewPCSetupWPF.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/Release/net8.0-windows/win-x64/publish/Initio.exe
+          generate_release_notes: true
