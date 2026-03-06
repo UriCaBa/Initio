@@ -1,91 +1,89 @@
 # Initio
 
-A modern WPF desktop application for quickly bootstrapping a fresh Windows PC by batch-installing apps via **winget** (Windows Package Manager).
+Initio is a WPF desktop app for provisioning a fresh Windows machine with `winget`. The app now uses a split architecture: a WPF shell for windowing and presentation, and a reusable `Initio.Core` project for catalog, install, search, debloat, viewmodels, and command/state management.
 
 ## Overview
 
-Initio lets users pick from curated app catalogs or search the winget repository, then batch-install everything in one click. It ships as a single portable `.exe` with an embedded catalog of ~200 apps across 7 categories, 5 switchable themes, and quick-setup profiles for common use cases (Dev, Home Office, Gaming).
+Initio lets you start from a curated setup, switch profiles, browse a store-like catalog, search `winget`, and run batch installs with progress, ETA, retries, cancellation, and in-app logs. It also includes a debloat flow for common preinstalled packages and a test mode that boots the app with fake services and no external process or network calls.
 
 ## Tech Stack
 
-- **Runtime**: .NET 8.0
-- **Framework**: WPF (Windows Presentation Foundation)
-- **Language**: C# 12 (nullable enabled)
-- **Data**: JSON (System.Text.Json) — embedded + remote catalog
-- **Package Manager**: winget (Windows Package Manager)
-- **Testing**: xUnit + FlaUI (UI automation)
-- **Deployment**: Single-file, self-contained executable (win-x64)
+- Runtime: .NET 8
+- UI: WPF (`net8.0-windows`)
+- Core library: `Initio.Core` (`net8.0`)
+- Language: C# 12 with nullable enabled
+- Catalog format: JSON (`catalog.json` embedded + remote + cache)
+- Installer backend: `winget` CLI
+- Tests: xUnit + FlaUI
+- Distribution: self-contained single-file `win-x64` executable
 
 ## Quick Start
 
 ```powershell
-# Clone
-git clone https://github.com/UriCaBa/Initio.git
-cd Initio
-
-# Run
-dotnet run
+dotnet build NewPCSetupWPF.csproj
+dotnet run --project NewPCSetupWPF.csproj
 ```
 
-> Requires .NET 8 SDK and winget installed. See [Setup Guide](docs/SETUP.md) for details.
+### Test Mode
 
-## Features
+Use test mode when you want deterministic UI behavior without calling `winget`, PowerShell debloat commands, or the network.
 
-- **Quick Profiles**: One-click app selection for Dev, Home Office, Gaming, or Custom setups
-- **Curated Catalog**: ~200 apps across 7 categories (Productivity, Communication, Media, Development, Gaming, Security, Utilities)
-- **Store Browser**: Browse trending apps by category with trend scores and ratings
-- **Live Winget Search**: Search the full winget repository in real time
-- **Batch Install**: Sequential installation with retry logic (2 retries), per-app timeouts (15 min), ETA, and live logs
-- **5 Themes**: Midnight Blue, Neon Cyberpunk, Slate Professional, Gemini AI, Hacker Terminal — switchable at runtime
-- **Offline Support**: Three-tier catalog fallback (remote GitHub -> local cache -> embedded JSON)
-- **Portable**: Ships as a single `.exe` with no installation required
+```powershell
+$env:INITIO_TEST_MODE = '1'
+dotnet run --project NewPCSetupWPF.csproj
+```
+
+## Build and Test
+
+```powershell
+dotnet build NewPCSetupWPF.csproj
+dotnet test Tests\Initio.Tests.csproj
+dotnet test Tests.UI\Initio.UITests.csproj
+```
+
+## Executable Outputs
+
+- Debug build: `bin\Debug\net8.0-windows\win-x64\Initio.exe`
+- Publish output: `bin\Release\net8.0-windows\win-x64\publish\Initio.exe`
 
 ## Project Structure
 
-```
-NewPCSetupWPF/
-├── App.xaml / .cs                  # Application entry point, global error handling
-├── MainWindow.xaml / .cs           # Main UI: layout, themes, profiles, catalog management
-├── MainWindow.Install.cs           # Installation engine (partial class)
-├── Models/
-│   ├── AppItem.cs                  # "My Setup" app model with install status
-│   └── StoreTrendItem.cs           # Store/search app model with trend scoring
-├── Services/
-│   ├── CatalogService.cs           # Catalog loader (remote/cache/embedded fallback)
-│   └── WingetSearchService.cs      # Async winget search with output parsing
-├── Converters/
-│   └── InverseBoolConverter.cs     # Bool inversion for XAML bindings
-├── Themes/                         # 5 theme ResourceDictionaries
-│   ├── Theme.DarkElegant.xaml
-│   ├── Theme.GamerRgb.xaml
-│   ├── Theme.Corporate.xaml
-│   ├── Theme.Gemini.xaml
-│   └── Theme.Hacker.xaml
-├── Images/                         # App icons (ico, png)
-├── Tests/
-│   └── CatalogServiceTests.cs      # Unit tests for catalog loading and models
-├── Tests.UI/
-│   └── InitioAppTests.cs           # UI automation tests (FlaUI)
-├── catalog.json                    # Embedded app catalog (~200 apps, 7 categories)
-└── NewPCSetupWPF.csproj            # Project configuration
+```text
+Initio/
+|- App.xaml / App.xaml.cs                 # App startup and crash logging
+|- MainWindow.xaml / MainWindow.xaml.cs   # WPF shell and window chrome
+|- Controls/                              # Sidebar and per-tab user controls
+|- Services/                              # WPF-side composition, process runner, fake services
+|- Themes/                                # Theme dictionaries and shared styles
+|- Initio.Core/                           # Models, abstractions, services, viewmodels, commands
+|- Tests/                                 # Unit tests for core logic
+|- Tests.UI/                              # FlaUI UI automation tests
+|- docs/                                  # Project docs
+|- call/                                  # Architecture bundle for repo walkthroughs
+|- catalog.json                           # Embedded catalog source
+|- NewPCSetupWPF.csproj                   # WPF application project
+|- NewPCSetupWPF.sln                      # Solution with app, core, unit tests, UI tests
 ```
 
-## Available Commands
+## Key Features
 
-| Command | Description |
-|---------|-------------|
-| `dotnet run` | Run in development mode |
-| `dotnet build` | Build the project |
-| `dotnet test` | Run unit tests |
-| `dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true` | Publish portable executable |
+- Profiles: Default, Dev, Office, Gaming, Custom
+- Catalog fallback: remote -> cache -> embedded
+- Batch install engine: 2 retries, 15 minute timeout per app, cancellation, ETA, logs
+- Store and `winget` search flows that can add apps into "My Setup"
+- Debloat scanning/removal for known package list
+- Five runtime-switchable themes
+- Compact layout mode below 1220 px width
+- `INITIO_TEST_MODE=1` for stable automated tests
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) — system design, components, data flow
-- [Setup Guide](docs/SETUP.md) — prerequisites, installation, environment
-- [Testing](docs/TESTING.md) — test framework, running tests, structure
-- [Deployment](docs/DEPLOYMENT.md) — building, publishing, distribution
+- [Architecture](docs/ARCHITECTURE.md)
+- [Setup](docs/SETUP.md)
+- [Testing](docs/TESTING.md)
+- [Deployment](docs/DEPLOYMENT.md)
+- [Call docs bundle](call/README.md)
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT. See [LICENSE](LICENSE).

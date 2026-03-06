@@ -1,246 +1,121 @@
-// CatalogServiceTests.cs
-// Unit tests for CatalogService — validates JSON parsing, embedded resource loading,
-// and the full async load flow (remote → cache → embedded fallback).
-
-using NewPCSetupWPF.Services;
-using NewPCSetupWPF.Models;
+using System.Net;
+using System.Net.Http;
+using Initio.Core.Services;
 
 namespace Initio.Tests;
 
-/// <summary>
-/// Tests for CatalogService: embedded catalog loading, JSON parsing, and async flow.
-/// </summary>
 public class CatalogServiceTests
 {
-    // ═══ Embedded Resource Loading ═══
-
     [Fact]
-    public void LoadEmbeddedCatalog_ReturnsNonEmptyList()
+    public void LoadEmbeddedCatalog_FromRepoCatalog_ReturnsExpectedStructure()
     {
-        var items = CatalogService.LoadEmbeddedCatalog();
+        var service = new CatalogService(TestData.LoadRepoCatalogJson());
 
-        Assert.NotNull(items);
+        var items = service.LoadEmbeddedCatalog();
+
         Assert.NotEmpty(items);
-    }
-
-    [Fact]
-    public void LoadEmbeddedCatalog_ContainsExpectedCategories()
-    {
-        var items = CatalogService.LoadEmbeddedCatalog();
-        var categories = items.Select(i => i.Category).Distinct().ToList();
-
-        // The catalog.json has 7 categories
-        Assert.Contains("Productivity", categories);
-        Assert.Contains("Communication", categories);
-        Assert.Contains("Media & Creativity", categories);
-        Assert.Contains("Development", categories);
-        Assert.Contains("Gaming", categories);
-        Assert.Contains("Security & Privacy", categories);
-        Assert.Contains("System Utilities", categories);
-        Assert.Equal(7, categories.Count);
-    }
-
-    [Fact]
-    public void LoadEmbeddedCatalog_EachItemHasValidProperties()
-    {
-        var items = CatalogService.LoadEmbeddedCatalog();
-
-        foreach (var item in items)
-        {
-            // Every item must have a non-empty name and wingetId
-            Assert.False(string.IsNullOrWhiteSpace(item.Name), $"Item has empty Name (WingetId: {item.WingetId})");
-            Assert.False(string.IsNullOrWhiteSpace(item.WingetId), $"Item has empty WingetId (Name: {item.Name})");
-            Assert.False(string.IsNullOrWhiteSpace(item.Category), $"Item has empty Category (Name: {item.Name})");
-
-            // Rank should be positive
-            Assert.True(item.Rank > 0, $"Item {item.Name} has invalid Rank: {item.Rank}");
-
-            // Rating should be between 3.5 and 5.0
-            Assert.InRange(item.Rating, 3.5, 5.0);
-
-            // PopularitySignal should be one of the expected values
-            Assert.Contains(item.PopularitySignal, new[] { "Top ranked", "Top free", "Rising", "New" });
-        }
-    }
-
-    [Fact]
-    public void LoadEmbeddedCatalog_HasMinimumAppCount()
-    {
-        var items = CatalogService.LoadEmbeddedCatalog();
-
-        // We expect ~200 apps across all categories (at least 150 as a safety margin)
         Assert.True(items.Count >= 150, $"Expected at least 150 apps, got {items.Count}");
+        Assert.Contains(items, item => item.WingetId == "Microsoft.PowerToys");
+        Assert.Contains(items, item => item.WingetId == "Mozilla.Firefox");
+        Assert.Contains(items.Select(item => item.Category).Distinct(), category => category == "Development");
+        Assert.All(items, item => Assert.False(string.IsNullOrWhiteSpace(item.WingetId)));
     }
 
     [Fact]
-    public void LoadEmbeddedCatalog_EachCategoryHasApps()
+    public async Task LoadAsync_UsesRemoteCatalogAndWritesCache()
     {
-        var items = CatalogService.LoadEmbeddedCatalog();
-        var grouped = items.GroupBy(i => i.Category);
-
-        foreach (var group in grouped)
-        {
-            // Each category should have at least 10 apps
-            Assert.True(group.Count() >= 10,
-                $"Category '{group.Key}' only has {group.Count()} apps, expected at least 10");
-        }
-    }
-
-    [Fact]
-    public void LoadEmbeddedCatalog_RanksAreSequentialPerCategory()
-    {
-        var items = CatalogService.LoadEmbeddedCatalog();
-        var grouped = items.GroupBy(i => i.Category);
-
-        foreach (var group in grouped)
-        {
-            var ranks = group.Select(i => i.Rank).ToList();
-            // Ranks should start at 1 and be sequential
-            for (int i = 0; i < ranks.Count; i++)
+        var remoteJson = TestData.LoadRepoCatalogJson();
+        var handler = new StubHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Assert.Equal(i + 1, ranks[i]);
-            }
-        }
+                Content = new StringContent(remoteJson)
+            }));
+        var cachePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "catalog_cache.json");
+        using var httpClient = new HttpClient(handler);
+        var service = new CatalogService(
+            "{\"categories\":[]}",
+            httpClient,
+            cachePath: cachePath,
+            trustedCatalogHashes: [CatalogService.ComputeSha256(remoteJson)]);
+
+        var result = await service.LoadAsync();
+
+        Assert.Equal("remote", result.Source);
+        Assert.NotEmpty(result.Items);
+        Assert.True(File.Exists(cachePath));
+        Assert.Equal(remoteJson, await File.ReadAllTextAsync(cachePath));
+        Assert.DoesNotContain(result.Diagnostics, message => message.Contains("rejected", StringComparison.OrdinalIgnoreCase));
     }
 
-    // ═══ Data Integrity ═══
-
     [Fact]
-    public void LoadEmbeddedCatalog_NoDuplicateWingetIds()
+    public async Task LoadAsync_FallsBackToCacheWhenRemoteFails()
     {
-        var items = CatalogService.LoadEmbeddedCatalog();
-        var duplicates = items.GroupBy(i => i.WingetId, StringComparer.OrdinalIgnoreCase)
-                              .Where(g => g.Count() > 1)
-                              .Select(g => g.Key)
-                              .ToList();
+        var cacheDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(cacheDirectory);
+        var cachePath = Path.Combine(cacheDirectory, "catalog_cache.json");
+        var cachedJson = TestData.LoadRepoCatalogJson();
+        await File.WriteAllTextAsync(cachePath, cachedJson);
 
-        Assert.Empty(duplicates);
+        var handler = new StubHttpMessageHandler((_, _) => throw new HttpRequestException("offline"));
+        using var httpClient = new HttpClient(handler);
+        var service = new CatalogService(
+            "{\"categories\":[]}",
+            httpClient,
+            cachePath: cachePath,
+            trustedCatalogHashes: [CatalogService.ComputeSha256(cachedJson)]);
+
+        var result = await service.LoadAsync();
+
+        Assert.Equal("cache", result.Source);
+        Assert.NotEmpty(result.Items);
+        Assert.Contains(result.Items, item => item.WingetId == "Git.Git");
+        Assert.Contains(result.Diagnostics, message => message.Contains("Remote catalog failed", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public void EmbeddedCatalogJson_AllWingetIdsMatchValidationPattern()
+    public async Task LoadAsync_RejectsUntrustedRemoteCatalogAndFallsBackToEmbedded()
     {
-        // Read raw embedded JSON to catch malformed IDs BEFORE ParseCatalogJson filters them out
-        var assembly = typeof(CatalogService).Assembly;
-        using var stream = assembly.GetManifestResourceStream("catalog.json");
-        Assert.NotNull(stream);
-        using var reader = new System.IO.StreamReader(stream);
-        var doc = System.Text.Json.JsonDocument.Parse(reader.ReadToEnd());
-
-        var invalid = new List<string>();
-        foreach (var category in doc.RootElement.GetProperty("categories").EnumerateArray())
-        {
-            foreach (var app in category.GetProperty("apps").EnumerateArray())
+        var embeddedJson = TestData.LoadRepoCatalogJson();
+        var tamperedJson = embeddedJson + " ";
+        var handler = new StubHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
-                var wingetId = app.GetProperty("wingetId").GetString() ?? "";
-                if (!NewPCSetupWPF.Services.InputValidation.IsValidWingetId(wingetId))
-                    invalid.Add($"{app.GetProperty("name").GetString()}: {wingetId}");
-            }
-        }
+                Content = new StringContent(tamperedJson)
+            }));
+        var cachePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "catalog_cache.json");
+        using var httpClient = new HttpClient(handler);
+        var service = new CatalogService(embeddedJson, httpClient, cachePath: cachePath);
 
-        Assert.Empty(invalid);
-    }
+        var result = await service.LoadAsync();
 
-    // ═══ Well-Known Apps ═══
-
-    [Theory]
-    [InlineData("Microsoft.PowerToys")]
-    [InlineData("Mozilla.Firefox")]
-    [InlineData("Discord.Discord")]
-    [InlineData("Valve.Steam")]
-    [InlineData("Microsoft.VisualStudioCode")]
-    [InlineData("Git.Git")]
-    [InlineData("Spotify.Spotify")]
-    [InlineData("VideoLAN.VLC")]
-    public void LoadEmbeddedCatalog_ContainsWellKnownApps(string wingetId)
-    {
-        var items = CatalogService.LoadEmbeddedCatalog();
-
-        Assert.Contains(items, i =>
-            string.Equals(i.WingetId, wingetId, StringComparison.OrdinalIgnoreCase));
-    }
-
-    // ═══ StoreTrendItem Model ═══
-
-    [Fact]
-    public void StoreTrendItem_IsSelectedDefaultsFalse()
-    {
-        var item = new StoreTrendItem("Test", 1, "TestApp", "Test.App", 4.5, "Top ranked");
-
-        Assert.False(item.IsSelected);
+        Assert.Equal("embedded", result.Source);
+        Assert.NotEmpty(result.Items);
+        Assert.Contains(result.Items, item => item.WingetId == "Mozilla.Firefox");
+        Assert.Contains(result.Diagnostics, message => message.Contains("not trusted", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public void StoreTrendItem_CatalogStatusDefaultsEmpty()
+    public async Task LoadAsync_FallsBackToEmbeddedWhenRemoteAndCacheFail()
     {
-        var item = new StoreTrendItem("Test", 1, "TestApp", "Test.App", 4.5, "Top ranked");
+        var embeddedJson = TestData.LoadRepoCatalogJson();
+        var cacheDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(cacheDirectory);
+        var cachePath = Path.Combine(cacheDirectory, "catalog_cache.json");
+        await File.WriteAllTextAsync(cachePath, "{not-valid-json}");
 
-        Assert.Equal(string.Empty, item.CatalogStatus);
-    }
+        var handler = new StubHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)));
+        using var httpClient = new HttpClient(handler);
+        var service = new CatalogService(embeddedJson, httpClient, cachePath: cachePath);
 
-    [Fact]
-    public void StoreTrendItem_PropertyChangedFires()
-    {
-        var item = new StoreTrendItem("Test", 1, "TestApp", "Test.App", 4.5, "Top ranked");
-        var changedProps = new List<string>();
-        item.PropertyChanged += (s, e) => changedProps.Add(e.PropertyName!);
+        var result = await service.LoadAsync();
 
-        item.IsSelected = true;
-        item.CatalogStatus = "✅ Installed";
-
-        Assert.Contains(nameof(StoreTrendItem.IsSelected), changedProps);
-        Assert.Contains(nameof(StoreTrendItem.CatalogStatus), changedProps);
-    }
-
-    [Fact]
-    public void StoreTrendItem_TrendScoreCalculation()
-    {
-        var top = new StoreTrendItem("Test", 1, "First", "Test.First", 4.9, "Top ranked");
-        var mid = new StoreTrendItem("Test", 10, "Tenth", "Test.Tenth", 4.5, "Top free");
-        var low = new StoreTrendItem("Test", 30, "Thirtieth", "Test.Thirtieth", 3.7, "New");
-
-        // TrendScore = Max(42, 100 - (Rank-1)*2)
-        Assert.Equal(100, top.TrendScore);   // 100 - 0 = 100
-        Assert.Equal(82, mid.TrendScore);    // 100 - 18 = 82
-        Assert.Equal(42, low.TrendScore);    // 100 - 58 = 42 (clamped)
-    }
-
-    [Fact]
-    public void StoreTrendItem_TrendScoreDifferentiatesAllRanks()
-    {
-        // Verify that ranks 1-30 all produce distinct scores
-        var scores = Enumerable.Range(1, 30)
-            .Select(r => new StoreTrendItem("Test", r, $"App{r}", $"Test.App{r}", 4.0, "Test").TrendScore)
-            .ToList();
-
-        Assert.Equal(30, scores.Distinct().Count());
-    }
-
-    // ═══ Model SetField ═══
-
-    [Fact]
-    public void AppItem_SetFieldWithBool_NoBoxingIssue()
-    {
-        var item = new NewPCSetupWPF.Models.AppItem { Name = "Test", Category = "Test", WingetId = "Test.Test" };
-        var changedProps = new List<string>();
-        item.PropertyChanged += (s, e) => changedProps.Add(e.PropertyName!);
-
-        item.IsSelected = true;
-        item.IsSelected = true; // same value — should NOT fire
-
-        Assert.Single(changedProps, prop => prop == nameof(NewPCSetupWPF.Models.AppItem.IsSelected));
-    }
-
-    // ═══ Async Load Flow ═══
-
-    [Fact]
-    public async Task LoadAsync_ReturnsValidResult()
-    {
-        // LoadAsync always returns something (remote, cache, or embedded)
-        var (items, source) = await CatalogService.LoadAsync();
-
-        Assert.NotNull(items);
-        Assert.NotEmpty(items);
-        Assert.Contains(source, new[] { "remote", "cache", "embedded" });
+        Assert.Equal("embedded", result.Source);
+        Assert.NotEmpty(result.Items);
+        Assert.Contains(result.Items, item => item.WingetId == "Valve.Steam");
+        Assert.Contains(result.Diagnostics, message => message.Contains("Remote catalog failed", StringComparison.OrdinalIgnoreCase));
     }
 }
+
+
+

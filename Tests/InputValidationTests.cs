@@ -1,11 +1,9 @@
-using NewPCSetupWPF.Services;
+using Initio.Core.Services;
 
 namespace Initio.Tests;
 
 public class InputValidationTests
 {
-    // ═══ IsValidWingetId ═══
-
     [Theory]
     [InlineData("Google.Chrome")]
     [InlineData("Mozilla.Firefox")]
@@ -35,35 +33,31 @@ public class InputValidationTests
         Assert.False(InputValidation.IsValidWingetId(id));
     }
 
-    // ═══ SanitizeSearchQuery ═══
-
     [Fact]
     public void SanitizeSearchQuery_RemovesDangerousCharacters()
     {
         var result = InputValidation.SanitizeSearchQuery("chrome;echo pwned&rm -rf|cat$(`test`)\"bad\"");
 
-        Assert.DoesNotContain(";", result);
-        Assert.DoesNotContain("&", result);
-        Assert.DoesNotContain("|", result);
-        Assert.DoesNotContain("$", result);
-        Assert.DoesNotContain("(", result);
-        Assert.DoesNotContain(")", result);
-        Assert.DoesNotContain("`", result);
-        Assert.DoesNotContain("\"", result);
+        Assert.DoesNotContain(";", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("&", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("|", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("$", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("(", result, StringComparison.Ordinal);
+        Assert.DoesNotContain(")", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("`", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"", result, StringComparison.Ordinal);
     }
 
     [Fact]
     public void SanitizeSearchQuery_PreservesNormalText()
     {
-        var result = InputValidation.SanitizeSearchQuery("Visual Studio Code");
-        Assert.Equal("Visual Studio Code", result);
+        Assert.Equal("Visual Studio Code", InputValidation.SanitizeSearchQuery("Visual Studio Code"));
     }
 
     [Fact]
     public void SanitizeSearchQuery_TrimsResult()
     {
-        var result = InputValidation.SanitizeSearchQuery("  chrome  ");
-        Assert.Equal("chrome", result);
+        Assert.Equal("chrome", InputValidation.SanitizeSearchQuery("  chrome  "));
     }
 
     [Theory]
@@ -72,11 +66,8 @@ public class InputValidationTests
     [InlineData("   ")]
     public void SanitizeSearchQuery_EmptyInput_ReturnsEmpty(string? input)
     {
-        var result = InputValidation.SanitizeSearchQuery(input);
-        Assert.Equal(string.Empty, result);
+        Assert.Equal(string.Empty, InputValidation.SanitizeSearchQuery(input));
     }
-
-    // ═══ IsValidPackageName ═══
 
     [Theory]
     [InlineData("Microsoft.BingNews")]

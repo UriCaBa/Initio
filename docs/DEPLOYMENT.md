@@ -2,42 +2,64 @@
 
 ## Overview
 
-Initio is distributed as a single self-contained `.exe` file. No installer, no runtime dependencies on the target machine. Users download and run.
+Initio is intended to ship as a self-contained `win-x64` single-file executable.
 
-## Building for Release
+Important project settings in `NewPCSetupWPF.csproj`:
+- `PublishSingleFile=true`
+- `SelfContained=true`
+- `RuntimeIdentifier=win-x64`
+- `PublishReadyToRun=true`
+- `IncludeNativeLibrariesForSelfExtract=true`
+
+## Publish Command
 
 ```powershell
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+dotnet publish NewPCSetupWPF.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
-**Output**: `bin/Release/net8.0-windows/win-x64/publish/Initio.exe`
+## Publish Output
 
-### Publish configuration (from `.csproj`)
+```text
+bin\Release\net8.0-windows\win-x64\publish\Initio.exe
+```
 
-| Setting | Value | Effect |
-|---------|-------|--------|
-| `PublishSingleFile` | true | All assemblies bundled into one `.exe` |
-| `SelfContained` | true | .NET runtime included — no SDK needed on target |
-| `RuntimeIdentifier` | win-x64 | 64-bit Windows target |
-| `IncludeNativeLibrariesForSelfExtract` | true | Native libs embedded in single file |
+## Debug Executable
 
-## Distribution via GitHub Releases
+If you only need a local build for manual testing, use:
 
-1. Build the release executable (see above)
-2. Go to the repository on GitHub > **Releases** > **Draft a new release**
-3. Create a tag (e.g., `v1.0.0`)
-4. Upload `Initio.exe` from the publish folder
-5. Add release notes describing changes
-6. Publish the release
+```text
+bin\Debug\net8.0-windows\win-x64\Initio.exe
+```
 
-Users download the `.exe` and run it directly — no installation step required.
+## Distribution Notes
 
-## Target Environment
+- The executable contains the embedded catalog, so the app can still boot offline.
+- Remote catalog refresh is accepted only when the downloaded catalog matches a trusted embedded SHA-256 fingerprint.
+- Real install flows still depend on `winget` being present on the target machine.
+- Test mode is a development and automation feature; it is enabled only through the `INITIO_TEST_MODE` environment variable.
 
-| Requirement | Details |
-|-------------|---------|
-| OS | Windows 10 or 11 (64-bit) |
-| Runtime | None (self-contained) |
-| winget | Required for app installation features; app launches without it but disables install functionality |
-| Disk space | ~70 MB for the executable |
-| Network | Optional — embedded catalog works offline; network needed for remote catalog updates and winget operations |
+## Release Integrity
+
+Before publishing a GitHub release:
+
+1. Sign `Initio.exe` with Authenticode if you have a code-signing certificate.
+2. Generate and publish a SHA-256 checksum for the exact release binary.
+3. Keep the embedded catalog in sync with the trusted remote catalog content used for that release.
+4. Include the checksum and verification steps in the release notes.
+
+Example checksum command:
+
+```powershell
+Get-FileHash .\bin\Release\net8.0-windows\win-x64\publish\Initio.exe -Algorithm SHA256
+```
+
+## Release Checklist
+
+1. Build the app in Debug and verify the shell boots.
+2. Run `dotnet test Tests\Initio.Tests.csproj`.
+3. Run `dotnet test Tests.UI\Initio.UITests.csproj` in an interactive desktop session.
+4. Publish the Release executable.
+5. Smoke-test the published `Initio.exe` on a Windows machine with `winget` installed.
+6. Generate and record the SHA-256 checksum for the published binary.
+7. Sign the executable if code signing is available.
+8. Attach the checksum/signing details to the GitHub release.

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -10,7 +10,6 @@
     <Product>Initio</Product>
     <AssemblyTitle>Initio</AssemblyTitle>
     <AssemblyName>Initio</AssemblyName>
-    <!-- Single-file publishing optimizations -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -19,16 +18,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="Initio.Core\Initio.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Images\**" />
     <EmbeddedResource Include="catalog.json" LogicalName="catalog.json" />
   </ItemGroup>
 
-  <!-- Exclude the Tests folder from default compile globbing to prevent
-       the WPF XAML temp project (_wpftmp.csproj) from pulling in test files -->
   <ItemGroup>
     <Compile Remove="Tests\**" />
     <Compile Remove="Tests.UI\**" />
+    <Compile Remove="Initio.Core\**" />
     <None Remove="Tests\**" />
     <None Remove="Tests.UI\**" />
+    <None Remove="Initio.Core\**" />
   </ItemGroup>
 </Project>
