@@ -43,6 +43,18 @@ public class BloatwareServiceTests
     }
 
     [Fact]
+    public async Task DetectInstalledAsync_DoesNotTreatSubstringMatchesAsInstalled()
+    {
+        var runner = new RecordingProcessRunner();
+        runner.Results.Enqueue(new ProcessResult(0, "king.com.CandyCrushSagaExtended", string.Empty));
+        var service = new BloatwareService(runner, TrustedPowerShellPath);
+
+        var installed = await service.DetectInstalledAsync(["king.com.CandyCrushSaga"]);
+
+        Assert.Empty(installed);
+    }
+
+    [Fact]
     public async Task DetectInstalledAsync_RelativePowerShellPath_ReturnsEmptyWithoutRunning()
     {
         var runner = new RecordingProcessRunner();

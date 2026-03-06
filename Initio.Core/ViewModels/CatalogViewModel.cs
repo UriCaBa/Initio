@@ -129,7 +129,6 @@ public sealed class CatalogViewModel : ObservableObject
     public void RefreshVisibleItems()
     {
         var ordered = _allItems
-            .Where(item => item.IsSelected || item.IsInstalled)
             .OrderBy(item => item.IsInstalled)
             .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();

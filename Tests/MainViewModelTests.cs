@@ -146,6 +146,22 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task CatalogView_KeepsDeselectedAppsVisibleForReselection()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.InitializeAsync();
+
+        var initiallySelected = viewModel.Catalog.AllItems.Count(item => item.IsSelected && !item.IsInstalled);
+        var firefox = viewModel.Catalog.AllItems.Single(item => item.WingetId == "Mozilla.Firefox");
+        firefox.IsSelected = false;
+        var selectedAfterToggle = viewModel.Catalog.AllItems.Count(item => item.IsSelected && !item.IsInstalled);
+
+        Assert.Contains(viewModel.Catalog.VisibleItems, item => item.WingetId == "Mozilla.Firefox");
+        Assert.Equal(initiallySelected - 1, selectedAfterToggle);
+        Assert.Contains($"{selectedAfterToggle} selected", viewModel.SelectionSummary, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task InstallSelectedCommand_RetriesOnceThenSucceeds()
     {
         var winget = new StubWingetClient();

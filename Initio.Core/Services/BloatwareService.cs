@@ -94,8 +94,7 @@ public sealed class BloatwareService : IBloatwareService
 
         foreach (var packageName in packageNames)
         {
-            if (installedNames.Contains(packageName) ||
-                installedNames.Any(name => name.Contains(packageName, StringComparison.OrdinalIgnoreCase)))
+            if (installedNames.Contains(packageName))
             {
                 installed.Add(packageName);
             }
@@ -145,4 +144,3 @@ public sealed class BloatwareService : IBloatwareService
             File.Exists(executablePath);
     }
 }
-
