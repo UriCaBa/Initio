@@ -1,150 +1,176 @@
-# Architecture
+﻿# Architecture
 
 ## Overview
 
-Initio is a single-window WPF desktop application following an MVVM-inspired pattern with code-behind. The application is structured as a monolith with clear separation between UI, models, and services via partial classes and dedicated service layer.
+Initio is a two-layer desktop application:
 
-## System Diagram
+1. `NewPCSetupWPF` is the Windows-only shell.
+2. `Initio.Core` contains the non-visual application logic.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                        MainWindow                            │
-│  ┌─────────────┐  ┌──────────────┐  ┌────────────────────┐  │
-│  │  Sidebar     │  │  Tab Control │  │  Installation      │  │
-│  │  - Themes    │  │  - My Setup  │  │  Engine             │  │
-│  │  - Profiles  │  │  - Store     │  │  (Install.cs)      │  │
-│  │  - Actions   │  │  - Search    │  │                    │  │
-│  │  - Logs      │  │              │  │                    │  │
-│  └─────────────┘  └──────┬───────┘  └────────┬───────────┘  │
-│                          │                    │              │
-│         ┌────────────────┴────────────────────┘              │
-│         ▼                                                    │
-│  ┌─────────────────────────────────────────────────────┐     │
-│  │              ObservableCollections                   │     │
-│  │  _appItems  |  _storeTrendItems  |  _searchResults  │     │
-│  └──────┬──────────────┬──────────────────┬────────────┘     │
-└─────────┼──────────────┼──────────────────┼──────────────────┘
-          │              │                  │
-          ▼              ▼                  ▼
-   ┌────────────┐ ┌──────────────┐  ┌──────────────────┐
-   │  AppItem   │ │StoreTrendItem│  │  WingetSearch     │
-   │  (Model)   │ │  (Model)     │  │  Service          │
-   └────────────┘ └──────────────┘  └──────────────────┘
-                         ▲
-                         │
-                  ┌──────────────┐
-                  │ CatalogService│
-                  │ Remote→Cache  │
-                  │ →Embedded     │
-                  └──────────────┘
+The shell is responsible for startup, window chrome, theme resource swapping, and wiring events that are intentionally kept outside the core. The core owns state, commands, catalog loading, `winget` integration, debloat orchestration, and the viewmodels bound by the WPF UI.
+
+## High-Level Layout
+
+```text
+App.xaml.cs
+  -> AppServiceFactory
+      -> MainViewModel
+          -> CatalogViewModel
+          -> StoreViewModel
+          -> SearchViewModel
+          -> DebloatViewModel
+          -> ICatalogService
+          -> IWingetClient
+          -> IBloatwareService
+
+MainWindow.xaml / MainWindow.xaml.cs
+  -> SidebarPane
+  -> CatalogTabView
+  -> StoreTabView
+  -> SearchTabView
+  -> DebloatTabView
 ```
 
-## Directory Structure
+## Projects
 
-| Directory | Purpose |
-|-----------|---------|
-| `/` (root) | Application entry point (`App.xaml`), main window, project config |
-| `Models/` | Data models with `INotifyPropertyChanged` for WPF binding |
-| `Services/` | Business logic — catalog loading, winget process interaction |
-| `Converters/` | WPF value converters for XAML data binding |
-| `Themes/` | XAML ResourceDictionaries defining color schemes and styles |
-| `Images/` | Application icons and visual assets |
-| `Tests/` | xUnit unit tests |
-| `Tests.UI/` | FlaUI-based UI automation tests |
+### `NewPCSetupWPF`
 
-## Key Components
+Purpose:
+- Starts the application
+- Registers crash handlers
+- Creates the `MainViewModel`
+- Hosts the shell window and custom title bar
+- Loads and swaps WPF theme dictionaries
+- Keeps the personal `Activate Windows` button flow out of the core refactor
+- Documents that `Activate Windows` is a personal-use exception retained by choice, not a hardened or recommended workflow
 
-### MainWindow (UI + ViewModel)
-- **Location**: `MainWindow.xaml`, `MainWindow.xaml.cs`
-- **Purpose**: Single application window — acts as both View and ViewModel
-- **Key responsibilities**:
-  - Theme switching via ResourceDictionary swapping
-  - Profile management (Default, Dev, Home Office, Gaming, Custom)
-  - Catalog filtering/sorting via `ICollectionView`
-  - Store browsing with dynamic category tabs
-  - Winget search integration
-  - Status bar, progress tracking, and log display
-- **Pattern**: Implements `INotifyPropertyChanged` directly on the Window class
+Key files:
+- `App.xaml.cs`
+- `MainWindow.xaml`
+- `MainWindow.xaml.cs`
+- `Controls/*.xaml`
+- `Services/AppServiceFactory.cs`
+- `Services/ProcessRunner.cs`
+- `Services/Fake*.cs`
+- `Themes/*.xaml`
 
-### Installation Engine
-- **Location**: `MainWindow.Install.cs` (partial class)
-- **Purpose**: All winget installation logic, separated from UI management
-- **Key responsibilities**:
-  - Winget availability detection (`winget --version`)
-  - Installed app state refresh (`winget list`)
-  - Sequential batch installation with retry (max 2 retries per app)
-  - Per-app timeout (15 minutes), cancellation support
-  - ETA calculation, progress reporting, live logging
-  - Process management with proper cleanup
+### `Initio.Core`
 
-### AppItem Model
-- **Location**: `Models/AppItem.cs`
-- **Purpose**: Represents an app in the user's "My Setup" catalog
-- **Key properties**: `Name`, `Category`, `WingetId` (immutable), `IsSelected`, `IsInstalled`, `InstallStatus` (bindable)
-- **Behavior**: Setting `IsInstalled = true` automatically unchecks `IsSelected`
+Purpose:
+- Defines app models, services, commands, and viewmodels
+- Encapsulates install, search, catalog, and debloat logic
+- Exposes platform-neutral contracts so the shell can swap real and fake implementations
 
-### StoreTrendItem Model
-- **Location**: `Models/StoreTrendItem.cs`
-- **Purpose**: Represents an app from the remote store catalog or winget search
-- **Key properties**: `Category`, `Rank`, `Name`, `WingetId`, `Rating`, `PopularitySignal`, `TrendScore` (computed), `IsSelected`, `CatalogStatus`
-- **Scoring**: `TrendScore = max(42, 100 - (rank - 1) * 3)`, `Rating = max(3.5, round(4.9 - (rank - 1) * 0.04, 1))`
+Key folders:
+- `Abstractions/`
+- `Infrastructure/`
+- `Models/`
+- `Services/`
+- `ViewModels/`
 
-### CatalogService
-- **Location**: `Services/CatalogService.cs`
-- **Purpose**: Loads the app catalog with three-tier fallback
-- **Strategy**: Remote GitHub JSON (5s timeout) -> Local cache (`%APPDATA%/Initio/catalog_cache.json`) -> Embedded resource (compiled into .exe)
-- **Key method**: `LoadAsync()` returns `(IReadOnlyList<StoreTrendItem>, string source)`
+## Service Contracts
 
-### WingetSearchService
-- **Location**: `Services/WingetSearchService.cs`
-- **Purpose**: Async winget repository search with robust output parsing
-- **Key method**: `SearchAsync(query, maxResults, cancellationToken)` — runs winget on background thread with 15s timeout
-- **Parsing**: Column-position detection from separator line, fallback to whitespace splitting
+`Initio.Core` defines four main runtime contracts:
 
-## Data Flow
+- `ICatalogService`: loads embedded and fallback catalog data
+- `IWingetClient`: wraps `winget --version`, `winget list`, `winget search`, and `winget install`
+- `IBloatwareService`: detects and removes selected AppX packages
+- `IProcessRunner`: low-level process execution abstraction used by Windows-only services
 
-### Application Startup
-1. `App.xaml.cs` — registers global exception handlers
-2. `MainWindow()` constructor — loads embedded catalog instantly, populates default 12 apps, initializes themes/profiles/views
-3. `Window_Loaded` — checks winget availability, runs `winget list` to refresh installed states
-4. `LoadCatalogAsync()` — background task attempts remote catalog, falls back to cache or embedded
+These interfaces make the app testable and allow `INITIO_TEST_MODE=1` to substitute fake services.
 
-### Installation Flow
-1. User selects apps (via profile or manual checkboxes)
-2. Click "Install Selected" or "Install All"
-3. `InstallAppsAsync()` iterates selected apps sequentially
-4. Per app: `winget install --id {WingetId} [--silent] --accept-package-agreements --accept-source-agreements`
-5. Success detection: looks for "Successfully installed", "Already installed", "No available upgrade"
-6. Fallback verification: `winget list "{query}"` to confirm installation
-7. Retry up to 2 times on failure
-8. UI updates: progress bar, ETA, status text, log entries
+## Main ViewModel Responsibilities
 
-### Catalog Fallback Chain
-```
-Remote (GitHub raw)  ──[5s timeout]──> Cache (%APPDATA%)  ──[read fail]──> Embedded (.exe resource)
-        │                                    ▲
-        └──── SaveCacheAsync() ──────────────┘
-```
+`MainViewModel` is now the root state container.
 
-## Design Decisions
+It owns:
+- app-wide status text, ETA, progress, and logs
+- profile selection and theme selection
+- install and debloat command orchestration
+- layout mode (`IsCompactLayout`, `SidebarWidth`)
+- synchronization between catalog, store, search, and debloat sub-viewmodels
 
-- **Partial classes**: `MainWindow.cs` and `MainWindow.Install.cs` split UI management from installation logic, keeping each file focused
-- **Code-behind over full MVVM**: Simplified architecture for a single-window app — no ViewModel layer, no DI container, no command framework
-- **Static services**: `CatalogService` and `WingetSearchService` are static classes — appropriate for stateless operations with no instance dependencies
-- **Embedded catalog**: `catalog.json` compiled as embedded resource ensures the app works offline on first launch without any network access
-- **Process-based winget integration**: Uses `System.Diagnostics.Process` to invoke winget CLI directly, parsing stdout — avoids dependency on winget COM APIs or NuGet packages
-- **No external NuGet dependencies**: The application uses only standard .NET 8 libraries, minimizing supply chain risk and simplifying distribution
+Sub-viewmodels:
+- `CatalogViewModel`: selected setup list and install status
+- `StoreViewModel`: curated store list, category filtering, add-to-setup staging
+- `SearchViewModel`: `winget` search results and selection state
+- `DebloatViewModel`: known package list, categories, summary, selection state
 
-## Theme System
+## Catalog Flow
 
-Five themes implemented as XAML ResourceDictionaries, each defining a consistent color palette:
+The catalog service uses a three-step fallback chain:
 
-| Theme | File | Style |
-|-------|------|-------|
-| Midnight Blue | `Theme.DarkElegant.xaml` | Dark blue with soft gold accents |
-| Neon Cyberpunk | `Theme.GamerRgb.xaml` | Dark with neon accent colors |
-| Slate Professional | `Theme.Corporate.xaml` | Neutral business tones |
-| Gemini AI | `Theme.Gemini.xaml` | AI-inspired branding |
-| Hacker Terminal | `Theme.Hacker.xaml` | Green-on-black terminal aesthetic |
+1. remote JSON from GitHub (`5s` timeout)
+2. local cache in `%APPDATA%\Initio\catalog_cache.json`
+3. embedded `catalog.json`
 
-Themes are swapped at runtime by replacing the merged ResourceDictionary in `Application.Current.Resources`. All UI elements use `DynamicResource` bindings to pick up theme changes immediately.
+Parsing happens in `CatalogJsonParser`, which validates `wingetId` values before creating `StoreTrendItem` instances.
+
+## Install Flow
+
+The install flow lives in `MainViewModel` and uses `IWingetClient`.
+
+Behavior kept from the previous app:
+- max retries per app: `2`
+- timeout per app: `15 minutes`
+- cancellation via `CancellationTokenSource`
+- live log accumulation in the sidebar
+- ETA based on elapsed average per completed app
+- verification via `winget list` after install attempts
+
+## Debloat Flow
+
+The debloat flow uses `IBloatwareService`.
+
+Behavior:
+- loads a known package list up front
+- scans installed AppX packages
+- marks `Detected`, `Not Found`, `Removing...`, `Removed`, or `Failed`
+- removes selected installed items with retry/cancel support
+
+## UI Composition
+
+`MainWindow.xaml` is now only a host for:
+- window chrome
+- shell layout
+- command buttons shared across tabs
+- the main `TabControl`
+
+Tab details live in:
+- `Controls/CatalogTabView.xaml`
+- `Controls/StoreTabView.xaml`
+- `Controls/SearchTabView.xaml`
+- `Controls/DebloatTabView.xaml`
+- `Controls/SidebarPane.xaml`
+
+## Themes and Styling
+
+Themes are split into:
+- per-theme dictionaries in `Themes/Theme.*.xaml`
+- shared control styles in `Themes/CommonStyles.xaml`
+
+The app swaps the active theme dictionary at runtime while keeping shared styles loaded. Main visual states, focus, caption buttons, and semantic colors are now driven from theme resources instead of local literals in `MainWindow.xaml`.
+
+## Test Mode
+
+When `INITIO_TEST_MODE=1` is set:
+- `AppServiceFactory` creates `FakeCatalogService`
+- `FakeWingetClient` returns deterministic version, installed list, search results, and install responses
+- `FakeBloatwareService` returns deterministic scan and remove behavior
+
+This mode exists to keep UI automation independent from network, `winget`, or PowerShell availability.
+
+## Logging and Failure Handling
+
+- `App.xaml.cs` writes unhandled crashes to `%LOCALAPPDATA%\Initio\crash_log.txt`
+- `MainViewModel` accumulates timestamped operational logs for install and debloat flows
+- catalog load and cache save failures intentionally fall through to the next fallback layer
+- invalid package identifiers are rejected by `InputValidation`
+
+## Current Invariants
+
+- `MainWindow.xaml.cs` should not own install/search/debloat business logic
+- `Activate Windows` remains shell-only and out of `Initio.Core`
+- `Activate Windows` stays in the app for personal use, with the expectation that it is intentionally outside the hardened workflows described for the rest of the codebase
+- tests reference `Initio.Core` directly; no unit test relies on a built app DLL
+- UI automation runs against a built executable in test mode

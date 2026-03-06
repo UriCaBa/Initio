@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -11,6 +11,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Initio.Tests", "Tests\Initio.Tests.csproj", "{9A1F5F67-1B14-9BAA-06A8-899E89E62E26}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Initio.UITests", "Tests.UI\Initio.UITests.csproj", "{CD8D6F20-C58D-EB2E-4D9E-F39A5C941173}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Initio.Core", "Initio.Core\Initio.Core.csproj", "{24A7DDA7-9348-494D-8F8C-8142C749C535}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,6 +32,10 @@ Global
 		{CD8D6F20-C58D-EB2E-4D9E-F39A5C941173}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD8D6F20-C58D-EB2E-4D9E-F39A5C941173}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD8D6F20-C58D-EB2E-4D9E-F39A5C941173}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24A7DDA7-9348-494D-8F8C-8142C749C535}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24A7DDA7-9348-494D-8F8C-8142C749C535}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24A7DDA7-9348-494D-8F8C-8142C749C535}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24A7DDA7-9348-494D-8F8C-8142C749C535}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

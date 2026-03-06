@@ -1,74 +1,106 @@
 # Testing
 
-## Overview
+## Test Projects
 
-| Aspect | Details |
-|--------|---------|
-| Unit test framework | xUnit |
-| UI test framework | FlaUI (Windows UI Automation) |
-| Test location | `Tests/` (unit), `Tests.UI/` (UI automation) |
+| Project | Scope | Notes |
+|---|---|---|
+| `Tests/Initio.Tests.csproj` | Unit and viewmodel tests for `Initio.Core` | No dependency on the built WPF executable |
+| `Tests.UI/Initio.UITests.csproj` | FlaUI end-to-end tests against the compiled app | Launches the real `.exe` with `INITIO_TEST_MODE=1` |
 
-## Running Tests
+## Commands
 
-| Command | Description |
-|---------|-------------|
-| `dotnet test` | Run all tests |
-| `dotnet test --filter "FullyQualifiedName~CatalogServiceTests"` | Run unit tests only |
-| `dotnet test --filter "FullyQualifiedName~InitioAppTests"` | Run UI tests only |
+Run core tests:
 
-## Test Structure
-
-### Unit Tests (`Tests/CatalogServiceTests.cs`)
-
-Tests for `CatalogService` and model behavior:
-
-- **Embedded catalog loading**: Verifies the embedded JSON resource loads correctly
-- **JSON parsing**: Validates category counts, app properties, wingetId format
-- **StoreTrendItem properties**: Tests `TrendScore` computation, `Rating` calculation, `PopularitySignal` assignment
-- **Property change notifications**: Verifies `INotifyPropertyChanged` fires for `IsSelected` and `CatalogStatus`
-- **Async load flow**: Tests the remote -> cache -> embedded fallback chain
-
-### UI Tests (`Tests.UI/InitioAppTests.cs`)
-
-End-to-end tests using FlaUI to automate the running application:
-
-- **Window launch**: Verifies the app starts and the main window is visible
-- **Tab navigation**: Tests switching between My Setup, Store, and Search tabs
-- **Catalog population**: Verifies the ListView populates with app items on startup
-- **Element discovery**: Finds controls by AutomationId (MainTabControl, CatalogListView)
-
-> UI tests require the application to be built first. They launch the compiled `.exe` and interact with it via Windows UI Automation.
-
-## Writing Tests
-
-### Unit test pattern
-
-```csharp
-[Fact]
-public async Task MethodName_Scenario_ExpectedResult()
-{
-    // Arrange
-    var items = CatalogService.LoadEmbeddedCatalog();
-
-    // Act
-    var result = items.First();
-
-    // Assert
-    Assert.NotEmpty(result.Name);
-    Assert.Contains(".", result.WingetId);
-}
+```powershell
+dotnet test Tests\Initio.Tests.csproj
 ```
 
-### UI test pattern
+Run UI automation tests:
 
-```csharp
-[Fact]
-public void UIElement_Action_ExpectedState()
-{
-    using var app = Application.Launch("path/to/Initio.exe");
-    var window = app.GetMainWindow(Automation);
-
-    var tab = window.FindFirstDescendant(cf => cf.ByAutomationId("MainTabControl"));
-    Assert.NotNull(tab);
-}
+```powershell
+dotnet build NewPCSetupWPF.csproj
+dotnet test Tests.UI\Initio.UITests.csproj
 ```
+
+Run a single UI test class:
+
+```powershell
+dotnet test Tests.UI\Initio.UITests.csproj --filter "FullyQualifiedName~InitioAppTests"
+```
+
+## What Is Covered
+
+### Core and unit coverage
+
+The unit suite covers:
+- `InputValidation` for `wingetId`, package names, and search sanitization
+- `CatalogService` remote/cache/embedded fallback
+- `WingetClient` parsing and argument sanitization
+- `BloatwareService` known package list, detect/remove/verify behavior
+- `MainViewModel` initialization, profile switching, compact layout, selection summaries
+- install retry and cancel behavior
+- debloat command behavior and summaries
+
+See:
+- `Tests/InputValidationTests.cs`
+- `Tests/CatalogServiceTests.cs`
+- `Tests/WingetClientTests.cs`
+- `Tests/BloatwareServiceTests.cs`
+- `Tests/MainViewModelTests.cs`
+
+### UI coverage
+
+The UI suite covers the shell in deterministic mode:
+- app launch and shell render
+- profile switching
+- theme change
+- search via Enter key
+- Debloater tab visibility and action state
+
+See:
+- `Tests.UI/InitioAppTests.cs`
+
+## Test Mode
+
+UI tests rely on:
+
+```powershell
+$env:INITIO_TEST_MODE = '1'
+```
+
+In this mode the app:
+- does not call real `winget`
+- does not call `Get-AppxPackage`
+- does not hit the network
+- returns deterministic fake catalog, search, and debloat data
+
+The same mode is useful for manual smoke testing when you want to validate layout, bindings, and automation IDs without touching the host machine.
+
+## Running the App for Manual QA in Test Mode
+
+```powershell
+$env:INITIO_TEST_MODE = '1'
+dotnet run --project NewPCSetupWPF.csproj
+```
+
+## Automation IDs
+
+The UI tests depend on stable `AutomationId` values, including:
+- `ThemeComboBox`
+- `MainTabControl`
+- `CatalogListView`
+- `SearchTextBox`
+- `SearchResultsListView`
+- `BloatwareListView`
+- `InstallBtn`
+- `CancelBtn`
+- `ScanBloatwareBtn`
+- `RemoveBloatwareBtn`
+
+If you change these IDs, update the FlaUI tests in the same change.
+
+## Notes and Constraints
+
+- UI tests require an interactive Windows desktop session.
+- The UI suite launches the built executable from `bin\Debug\net8.0-windows\win-x64\Initio.exe`.
+- Unit tests target `Initio.Core` directly, which removes the old fragile dependency on a built WPF DLL.

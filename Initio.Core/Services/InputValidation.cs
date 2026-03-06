@@ -1,41 +1,52 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
-namespace NewPCSetupWPF.Services;
+namespace Initio.Core.Services;
 
 public static partial class InputValidation
 {
     private static readonly Regex WingetIdRegex = WingetIdPattern();
-
     private static readonly Regex PackageNameRegex = PackageNamePattern();
-
     private static readonly char[] DangerousChars = ['"', ';', '&', '|', '`', '$', '(', ')'];
 
     public static bool IsValidWingetId(string? id)
     {
-        if (string.IsNullOrWhiteSpace(id)) return false;
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return false;
+        }
+
         return WingetIdRegex.IsMatch(id);
     }
 
     public static string SanitizeSearchQuery(string? query)
     {
-        if (string.IsNullOrWhiteSpace(query)) return string.Empty;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return string.Empty;
+        }
 
         var span = query.AsSpan();
         var builder = new char[span.Length];
-        int pos = 0;
+        var position = 0;
 
-        foreach (var c in span)
+        foreach (var character in span)
         {
-            if (Array.IndexOf(DangerousChars, c) == -1)
-                builder[pos++] = c;
+            if (Array.IndexOf(DangerousChars, character) == -1)
+            {
+                builder[position++] = character;
+            }
         }
 
-        return new string(builder, 0, pos).Trim();
+        return new string(builder, 0, position).Trim();
     }
 
     public static bool IsValidPackageName(string? name)
     {
-        if (string.IsNullOrWhiteSpace(name)) return false;
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return false;
+        }
+
         return PackageNameRegex.IsMatch(name);
     }
 

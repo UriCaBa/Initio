@@ -1,128 +1,125 @@
-using NewPCSetupWPF.Models;
-using NewPCSetupWPF.Services;
+﻿using Initio.Core.Abstractions;
+using Initio.Core.Models;
+using Initio.Core.Services;
 
 namespace Initio.Tests;
 
 public class BloatwareServiceTests
 {
-    // ═══ Known Bloatware List ═══
+    private const string TrustedPowerShellPath = @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe";
 
     [Fact]
-    public void GetKnownBloatware_ReturnsNonEmptyList()
+    public void GetKnownBloatware_ReturnsExpectedCategoriesAndVolume()
     {
-        var items = BloatwareService.GetKnownBloatware();
+        var service = new BloatwareService(new RecordingProcessRunner(), TrustedPowerShellPath);
 
-        Assert.NotNull(items);
+        var items = service.GetKnownBloatware();
+
         Assert.NotEmpty(items);
+        Assert.True(items.Count >= 30, $"Expected at least 30 items, got {items.Count}");
+        Assert.Contains(items.Select(item => item.Category).Distinct(), category => category == "Games");
+        Assert.Contains(items.Select(item => item.Category).Distinct(), category => category == "Microsoft Bloat");
+        Assert.Equal(items.Count, items.Select(item => item.PackageName).Distinct(StringComparer.OrdinalIgnoreCase).Count());
     }
 
     [Fact]
-    public void GetKnownBloatware_HasExpectedCategories()
+    public async Task DetectInstalledAsync_ReturnsDetectedPackageNames_WithoutMutatingDefinitions()
     {
-        var items = BloatwareService.GetKnownBloatware();
-        var categories = items.Select(i => i.Category).Distinct().ToList();
+        var runner = new RecordingProcessRunner();
+        runner.Results.Enqueue(new ProcessResult(0, "king.com.CandyCrushSaga\nBytedancePte.Ltd.TikTok", string.Empty));
+        var service = new BloatwareService(runner, TrustedPowerShellPath);
+        BloatwareDefinition[] items =
+        [
+            new("Candy Crush Saga", "Games", "king.com.CandyCrushSaga", "Pre-installed game"),
+            new("Xbox Game Bar", "Promotions", "Microsoft.XboxGamingOverlay", "Gaming overlay")
+        ];
 
-        Assert.Contains("Games", categories);
-        Assert.Contains("Social & Entertainment", categories);
-        Assert.Contains("Microsoft Bloat", categories);
-        Assert.Contains("Promotions", categories);
-        Assert.Equal(4, categories.Count);
+        var installed = await service.DetectInstalledAsync(items.Select(item => item.PackageName).ToArray());
+
+        Assert.Contains("king.com.CandyCrushSaga", installed);
+        Assert.DoesNotContain("Microsoft.XboxGamingOverlay", installed);
+        Assert.Single(runner.Calls);
+        Assert.Equal(TrustedPowerShellPath, runner.Calls[0].FileName);
     }
 
     [Fact]
-    public void GetKnownBloatware_EachItemHasValidProperties()
+    public async Task DetectInstalledAsync_DoesNotTreatSubstringMatchesAsInstalled()
     {
-        var items = BloatwareService.GetKnownBloatware();
+        var runner = new RecordingProcessRunner();
+        runner.Results.Enqueue(new ProcessResult(0, "king.com.CandyCrushSagaExtended", string.Empty));
+        var service = new BloatwareService(runner, TrustedPowerShellPath);
 
-        foreach (var item in items)
-        {
-            Assert.False(string.IsNullOrWhiteSpace(item.Name), $"Item has empty Name");
-            Assert.False(string.IsNullOrWhiteSpace(item.Category), $"Item has empty Category");
-            Assert.False(string.IsNullOrWhiteSpace(item.PackageName), $"Item has empty PackageName");
-            Assert.False(string.IsNullOrWhiteSpace(item.Description), $"Item has empty Description");
-        }
+        var installed = await service.DetectInstalledAsync(["king.com.CandyCrushSaga"]);
+
+        Assert.Empty(installed);
     }
 
     [Fact]
-    public void GetKnownBloatware_NoDuplicatePackageNames()
+    public async Task DetectInstalledAsync_RelativePowerShellPath_ReturnsEmptyWithoutRunning()
     {
-        var items = BloatwareService.GetKnownBloatware();
-        var packageNames = items.Select(i => i.PackageName).ToList();
+        var runner = new RecordingProcessRunner();
+        var service = new BloatwareService(runner, "powershell.exe");
 
-        Assert.Equal(packageNames.Count, packageNames.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        var installed = await service.DetectInstalledAsync(["king.com.CandyCrushSaga"]);
+
+        Assert.Empty(installed);
+        Assert.Empty(runner.Calls);
     }
 
     [Fact]
-    public void GetKnownBloatware_HasMinimumCount()
+    public async Task RemovePackageAsync_UsesExactLookupWithoutWildcards()
     {
-        var items = BloatwareService.GetKnownBloatware();
+        var runner = new RecordingProcessRunner();
+        runner.Results.Enqueue(new ProcessResult(0, string.Empty, string.Empty));
+        var service = new BloatwareService(runner, TrustedPowerShellPath);
 
-        Assert.True(items.Count >= 30, $"Expected at least 30 bloatware items, got {items.Count}");
-    }
+        var removed = await service.RemovePackageAsync("king.com.CandyCrushSaga");
 
-    // ═══ BloatwareItem Model ═══
-
-    [Fact]
-    public void BloatwareItem_DefaultState_IsCorrect()
-    {
-        var item = new BloatwareItem
-        {
-            Name = "Test", Category = "Test", PackageName = "test.pkg", Description = "Test"
-        };
-
-        Assert.False(item.IsSelected);
-        Assert.False(item.IsInstalled);
-        Assert.Equal("Detected", item.RemovalStatus);
+        Assert.True(removed);
+        Assert.Single(runner.Calls);
+        Assert.Equal(TrustedPowerShellPath, runner.Calls[0].FileName);
+        Assert.Contains("Get-AppxPackage -Name 'king.com.CandyCrushSaga'", runner.Calls[0].Arguments, StringComparison.Ordinal);
+        Assert.DoesNotContain("*king.com.CandyCrushSaga*", runner.Calls[0].Arguments, StringComparison.Ordinal);
+        Assert.Contains("PackageFullName", runner.Calls[0].Arguments, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BloatwareItem_SetInstalledFalse_DeselectsItem()
+    public async Task RemovePackageAsync_InvalidPackageName_ReturnsFalseWithoutRunningPowerShell()
     {
-        var item = new BloatwareItem
-        {
-            Name = "Test", Category = "Test", PackageName = "test.pkg", Description = "Test"
-        };
-        item.IsInstalled = true;
-        item.IsSelected = true;
+        var runner = new RecordingProcessRunner();
+        var service = new BloatwareService(runner, TrustedPowerShellPath);
 
-        item.IsInstalled = false;
+        var removed = await service.RemovePackageAsync("bad package name");
 
-        Assert.False(item.IsSelected);
+        Assert.False(removed);
+        Assert.Empty(runner.Calls);
     }
 
     [Fact]
-    public void BloatwareItem_PropertyChanged_FiresForIsSelected()
+    public async Task VerifyRemovedAsync_ReturnsTrueWhenPowerShellFindsNoPackage()
     {
-        var item = new BloatwareItem
-        {
-            Name = "Test", Category = "Test", PackageName = "test.pkg", Description = "Test"
-        };
-        var fired = false;
-        item.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(BloatwareItem.IsSelected)) fired = true;
-        };
+        var runner = new RecordingProcessRunner();
+        runner.Results.Enqueue(new ProcessResult(0, string.Empty, string.Empty));
+        var service = new BloatwareService(runner, TrustedPowerShellPath);
 
-        item.IsSelected = true;
+        var removed = await service.VerifyRemovedAsync("king.com.CandyCrushSaga");
 
-        Assert.True(fired);
+        Assert.True(removed);
+        Assert.Single(runner.Calls);
+        Assert.Contains("Get-AppxPackage -Name 'king.com.CandyCrushSaga'", runner.Calls[0].Arguments, StringComparison.Ordinal);
+        Assert.Contains("-ErrorAction SilentlyContinue", runner.Calls[0].Arguments, StringComparison.Ordinal);
+        Assert.DoesNotContain("*king.com.CandyCrushSaga*", runner.Calls[0].Arguments, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void BloatwareItem_PropertyChanged_FiresForRemovalStatus()
+    public async Task VerifyRemovedAsync_ReturnsFalseWhenProcessRunnerFails()
     {
-        var item = new BloatwareItem
-        {
-            Name = "Test", Category = "Test", PackageName = "test.pkg", Description = "Test"
-        };
-        var fired = false;
-        item.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName == nameof(BloatwareItem.RemovalStatus)) fired = true;
-        };
+        var runner = new RecordingProcessRunner();
+        runner.Results.Enqueue(null);
+        var service = new BloatwareService(runner, TrustedPowerShellPath);
 
-        item.RemovalStatus = "Removed";
+        var removed = await service.VerifyRemovedAsync("king.com.CandyCrushSaga");
 
-        Assert.True(fired);
+        Assert.False(removed);
     }
 }

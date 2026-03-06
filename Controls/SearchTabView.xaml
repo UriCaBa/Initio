@@ -1,0 +1,88 @@
+<UserControl x:Class="NewPCSetupWPF.Controls.SearchTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Padding="12,8">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,4,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="SearchTextBox"
+                         AutomationProperties.AutomationId="SearchTextBox"
+                         Text="{Binding Search.Query, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource SearchBoxStyle}">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding SearchCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+                <Button Grid.Column="1"
+                        Content="Search winget"
+                        AutomationProperties.AutomationId="SearchWingetBtn"
+                        Command="{Binding SearchCommand}"
+                        Margin="8,0,0,0" />
+            </Grid>
+
+            <ListView Grid.Row="1"
+                      AutomationProperties.AutomationId="SearchResultsListView"
+                      Margin="0,8,0,0"
+                      ItemsSource="{Binding Search.Results}">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Width="42" Header="Sel">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox HorizontalAlignment="Center"
+                                              Style="{StaticResource GlobalCheckBoxStyle}"
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Width="220" Header="Name" DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Width="280" Header="Winget ID" DisplayMemberBinding="{Binding WingetId}" />
+                        <GridViewColumn Width="120" Header="Status" DisplayMemberBinding="{Binding CatalogStatus}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+
+            <Grid Grid.Row="2" Margin="0,8,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Content="Select All"
+                        AutomationProperties.AutomationId="SearchSelectAllBtn"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Command="{Binding SearchSelectAllCommand}"
+                        Margin="0,0,5,0" />
+                <Button Grid.Column="1"
+                        Content="Select None"
+                        AutomationProperties.AutomationId="SearchSelectNoneBtn"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Command="{Binding SearchSelectNoneCommand}"
+                        Margin="0,0,5,0" />
+                <TextBlock Grid.Column="2"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           Margin="10,0,0,0"
+                           Text="{Binding StoreSelectionSummary}"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                <Button Grid.Column="3"
+                        Content="Add to My Setup"
+                        AutomationProperties.AutomationId="SearchAddToSetupBtn"
+                        Command="{Binding AddStoreTrendAppCommand}" />
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>
+
+
+

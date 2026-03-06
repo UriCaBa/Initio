@@ -2,75 +2,93 @@
 
 ## Prerequisites
 
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| Windows | 10 or 11 | WPF is Windows-only |
-| .NET SDK | 8.0+ | [Download](https://dotnet.microsoft.com/download/dotnet/8.0) |
-| winget | Latest | Pre-installed on Windows 11; on Windows 10, install [App Installer](https://apps.microsoft.com/detail/9nblggh4nns1) from Microsoft Store |
+| Requirement | Notes |
+|---|---|
+| Windows 10 or 11 | WPF build and UI automation are Windows-only |
+| .NET 8 SDK | Required to build and run the solution |
+| `winget` | Required for real install flows |
 
-No NuGet packages or external dependencies are required beyond the .NET 8 SDK.
-
-## Installation
+## Restore
 
 ```powershell
-git clone https://github.com/UriCaBa/Initio.git
-cd Initio
-dotnet restore
+dotnet restore NewPCSetupWPF.csproj
 ```
 
-## Running Locally
+If you want all test projects restored as well:
 
 ```powershell
-dotnet run
+dotnet restore Tests\Initio.Tests.csproj
+dotnet restore Tests.UI\Initio.UITests.csproj
 ```
 
-The application will launch with the embedded catalog (~200 apps) and attempt to fetch the latest remote catalog in the background. If winget is not installed, the app will still launch but installation features will be disabled.
+## Run Locally
 
-## Building
+Normal mode:
 
 ```powershell
-dotnet build
+dotnet run --project NewPCSetupWPF.csproj
 ```
 
-Output: `bin/Debug/net8.0-windows/Initio.exe`
+Deterministic test mode:
+
+```powershell
+$env:INITIO_TEST_MODE = '1'
+dotnet run --project NewPCSetupWPF.csproj
+```
+
+## Build Outputs
+
+Debug build:
+- `bin\Debug\net8.0-windows\win-x64\Initio.exe`
+
+Release publish:
+- `bin\Release\net8.0-windows\win-x64\publish\Initio.exe`
+
+Build command:
+
+```powershell
+dotnet build NewPCSetupWPF.csproj
+```
+
+## Solution Layout
+
+- `NewPCSetupWPF.csproj`: WPF shell
+- `Initio.Core/Initio.Core.csproj`: core logic and viewmodels
+- `Tests/Initio.Tests.csproj`: unit tests
+- `Tests.UI/Initio.UITests.csproj`: FlaUI UI tests
 
 ## Configuration
 
-### Catalog Source
+### Catalog
 
-The app loads its catalog from three sources in order:
+Catalog source order:
+1. remote GitHub JSON
+2. `%APPDATA%\Initio\catalog_cache.json`
+3. embedded `catalog.json`
 
-1. **Remote**: `https://raw.githubusercontent.com/UriCaBa/Initio/main/catalog.json` (5s timeout)
-2. **Cache**: `%APPDATA%/Initio/catalog_cache.json` (automatically saved on successful remote fetch)
-3. **Embedded**: `catalog.json` compiled into the executable as an embedded resource
+To update the catalog, edit `catalog.json` in the repo root.
 
-To modify the catalog, edit `catalog.json` at the project root. The structure:
+### Test Mode
 
-```json
-{
-  "version": 1,
-  "updatedAt": "2026-02-12",
-  "categories": [
-    {
-      "name": "Category Name",
-      "apps": [
-        { "name": "Display Name", "wingetId": "Publisher.AppId" }
-      ]
-    }
-  ]
-}
-```
+`INITIO_TEST_MODE=1` switches the app to fake services defined in `Services/`.
+
+Use it when:
+- running UI tests
+- verifying layout or bindings offline
+- avoiding process execution on a development machine
 
 ### Themes
 
-Theme files are in `Themes/`. To add a new theme:
-1. Create `Themes/Theme.YourTheme.xaml` following the color key pattern in existing themes
-2. Register it in the `ThemeOptions` list in `MainWindow.xaml.cs`
+Theme dictionaries live in `Themes/Theme.*.xaml`.
+Shared styles live in `Themes/CommonStyles.xaml`.
+
+If you add a theme, update the `ThemeOptions` list in `Initio.Core/ViewModels/MainViewModel.cs`.
 
 ## Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| "winget not found" | Install App Installer from Microsoft Store, or run `winget --version` to verify |
-| App launches but catalog is empty | Check network — the embedded fallback should always work; verify `catalog.json` is included as `EmbeddedResource` in `.csproj` |
-| Build fails on non-Windows | WPF is Windows-only; this project cannot be built on macOS/Linux |
+| Issue | What to check |
+|---|---|
+| `winget` unavailable | Install or repair App Installer from Microsoft Store |
+| App launches but install buttons stay disabled | The app did not detect `winget`; try test mode to validate UI only |
+| UI tests fail on CI or headless session | FlaUI requires an interactive desktop |
+| Catalog updates do not appear | Clear `%APPDATA%\Initio\catalog_cache.json` or change the embedded `catalog.json` |

@@ -1,0 +1,141 @@
+﻿<UserControl x:Class="NewPCSetupWPF.Controls.DebloatTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Padding="12,8">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <ItemsControl x:Name="BloatwareCategoryTabsPanel"
+                          AutomationProperties.AutomationId="BloatwareCategoryTabsPanel"
+                          ItemsSource="{Binding Debloat.Categories}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Content="{Binding DisplayName}"
+                                Command="{Binding DataContext.SelectBloatwareCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource PillButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ListView x:Name="BloatwareListView"
+                      AutomationProperties.AutomationId="BloatwareListView"
+                      Grid.Row="1"
+                      Margin="0,8,0,0"
+                      ItemsSource="{Binding Debloat.VisibleItems}">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Width="42" Header="Sel">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox HorizontalAlignment="Center"
+                                              Style="{StaticResource GlobalCheckBoxStyle}"
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                              IsEnabled="{Binding IsInstalled}" />
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Width="180" Header="Name" DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Width="160" Header="Category" DisplayMemberBinding="{Binding Category}" />
+                        <GridViewColumn Width="220" Header="Package" DisplayMemberBinding="{Binding PackageName}" />
+                        <GridViewColumn Width="110" Header="Status">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding RemovalStatus}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding RemovalStatus}" Value="Detected">
+                                                        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding RemovalStatus}" Value="Removed">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding RemovalStatus}" Value="Failed">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding RemovalStatus}" Value="Removing...">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+
+            <Grid Grid.Row="2" Margin="0,8,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Content="Select All"
+                        AutomationProperties.AutomationId="DebloatSelectAllBtn"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Command="{Binding DebloatSelectAllCommand}"
+                        Margin="0,0,5,0" />
+                <Button Grid.Column="1"
+                        Content="Select None"
+                        AutomationProperties.AutomationId="DebloatSelectNoneBtn"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Command="{Binding DebloatSelectNoneCommand}"
+                        Margin="0,0,5,0" />
+                <Button Grid.Column="2"
+                        Content="Scan System"
+                        AutomationProperties.AutomationId="ScanBloatwareBtn"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Command="{Binding ScanBloatwareCommand}"
+                        Margin="0,0,5,0" />
+                <Border Grid.Column="3"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource SurfaceHighBrush}"
+                        CornerRadius="8"
+                        Padding="10,4">
+                    <TextBlock Text="{Binding BloatwareSummary}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               FontSize="11" />
+                </Border>
+                <Button Grid.Column="4"
+                        Content="Cancel"
+                        AutomationProperties.AutomationId="CancelDebloatBtn"
+                        Style="{StaticResource DangerButtonStyle}"
+                        Command="{Binding CancelDebloatCommand}"
+                        Margin="5,0,5,0" />
+                <Button Grid.Column="5"
+                        Content="Remove Selected"
+                        AutomationProperties.AutomationId="RemoveBloatwareBtn"
+                        Style="{StaticResource DangerButtonStyle}"
+                        Command="{Binding RemoveBloatwareCommand}" />
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>
