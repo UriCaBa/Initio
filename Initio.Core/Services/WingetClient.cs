@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Initio.Core.Abstractions;
 using Initio.Core.Models;
 
@@ -167,8 +167,8 @@ public sealed class WingetClient : IWingetClient
                 id = parts[1];
             }
 
-            id = id.TrimEnd('.', '�');
-            id = id.Replace("…", string.Empty, StringComparison.Ordinal);
+            id = id.TrimEnd('.', '…');
+            id = id.Replace("â€¦", string.Empty, StringComparison.Ordinal);
             if (!string.IsNullOrWhiteSpace(name) &&
                 !string.IsNullOrWhiteSpace(id) &&
                 id.Contains('.', StringComparison.Ordinal) &&
@@ -184,18 +184,24 @@ public sealed class WingetClient : IWingetClient
 
     private async Task<string?> RunWingetCommandAsync(string arguments, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_wingetExecutablePath) ||
-            (Path.IsPathRooted(_wingetExecutablePath) && !File.Exists(_wingetExecutablePath)))
+        if (!HasTrustedExecutablePath(_wingetExecutablePath))
         {
             return null;
         }
 
         var result = await _processRunner.RunAsync(
-            new ProcessSpec(_wingetExecutablePath, arguments),
+            new ProcessSpec(_wingetExecutablePath!, arguments),
             timeout,
             cancellationToken).ConfigureAwait(false);
 
         return result?.CombinedOutput;
+    }
+
+    private static bool HasTrustedExecutablePath(string? executablePath)
+    {
+        return !string.IsNullOrWhiteSpace(executablePath) &&
+            Path.IsPathRooted(executablePath) &&
+            File.Exists(executablePath);
     }
 
     private static List<(int Start, int End)> FindColumnPositions(string separatorLine)
@@ -222,4 +228,3 @@ public sealed class WingetClient : IWingetClient
         return columns;
     }
 }
-

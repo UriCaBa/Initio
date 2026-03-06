@@ -1,5 +1,6 @@
 ﻿using Initio.Core.Infrastructure;
 using Initio.Core.Models;
+using Initio.Core.Services;
 
 namespace Initio.Core.ViewModels;
 
@@ -80,7 +81,7 @@ public sealed partial class MainViewModel
 
     private async Task<bool> InstallSingleAppAsync(AppItem app, CancellationToken cancellationToken)
     {
-        if (!Services.InputValidation.IsValidWingetId(app.WingetId))
+        if (!InputValidation.IsValidWingetId(app.WingetId))
         {
             AppendLog($"  Skipping {app.Name}: invalid WingetId '{app.WingetId}'.");
             return false;

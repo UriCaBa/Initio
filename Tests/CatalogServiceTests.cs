@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using Initio.Core.Services;
 
@@ -95,6 +95,27 @@ public class CatalogServiceTests
     }
 
     [Fact]
+    public async Task LoadAsync_RejectsRemoteCatalogWhenNoTrustedHashesConfigured()
+    {
+        const string remoteJson = """
+{"categories":[{"name":"Utilities","apps":[{"name":"PowerToys","wingetId":"Microsoft.PowerToys"}]}]}
+""";
+        var handler = new StubHttpMessageHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(remoteJson)
+            }));
+        using var httpClient = new HttpClient(handler);
+        var service = new CatalogService(string.Empty, httpClient, cachePath: Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "catalog_cache.json"));
+
+        var result = await service.LoadAsync();
+
+        Assert.Equal("embedded", result.Source);
+        Assert.Empty(result.Items);
+        Assert.Contains(result.Diagnostics, message => message.Contains("no trusted catalog hashes configured", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task LoadAsync_FallsBackToEmbeddedWhenRemoteAndCacheFail()
     {
         var embeddedJson = TestData.LoadRepoCatalogJson();
@@ -116,6 +137,3 @@ public class CatalogServiceTests
         Assert.Contains(result.Diagnostics, message => message.Contains("Remote catalog failed", StringComparison.OrdinalIgnoreCase));
     }
 }
-
-
-

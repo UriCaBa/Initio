@@ -147,8 +147,14 @@ public sealed class CatalogService : ICatalogService
             return false;
         }
 
+        if (_trustedCatalogHashes.Count == 0)
+        {
+            diagnostics.Add($"{source} catalog rejected: no trusted catalog hashes configured.");
+            return false;
+        }
+
         var hash = ComputeSha256(json);
-        if (_trustedCatalogHashes.Count > 0 && !_trustedCatalogHashes.Contains(hash))
+        if (!_trustedCatalogHashes.Contains(hash))
         {
             diagnostics.Add($"{source} catalog rejected: SHA-256 {hash[..12]} is not trusted.");
             return false;

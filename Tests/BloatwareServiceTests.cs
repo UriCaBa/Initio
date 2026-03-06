@@ -43,6 +43,18 @@ public class BloatwareServiceTests
     }
 
     [Fact]
+    public async Task DetectInstalledAsync_RelativePowerShellPath_ReturnsEmptyWithoutRunning()
+    {
+        var runner = new RecordingProcessRunner();
+        var service = new BloatwareService(runner, "powershell.exe");
+
+        var installed = await service.DetectInstalledAsync(["king.com.CandyCrushSaga"]);
+
+        Assert.Empty(installed);
+        Assert.Empty(runner.Calls);
+    }
+
+    [Fact]
     public async Task RemovePackageAsync_UsesExactLookupWithoutWildcards()
     {
         var runner = new RecordingProcessRunner();
@@ -85,5 +97,16 @@ public class BloatwareServiceTests
         Assert.Contains("Get-AppxPackage -Name 'king.com.CandyCrushSaga'", runner.Calls[0].Arguments, StringComparison.Ordinal);
         Assert.DoesNotContain("*king.com.CandyCrushSaga*", runner.Calls[0].Arguments, StringComparison.Ordinal);
     }
-}
 
+    [Fact]
+    public async Task VerifyRemovedAsync_ReturnsFalseWhenProcessRunnerFails()
+    {
+        var runner = new RecordingProcessRunner();
+        runner.Results.Enqueue(null);
+        var service = new BloatwareService(runner, TrustedPowerShellPath);
+
+        var removed = await service.VerifyRemovedAsync("king.com.CandyCrushSaga");
+
+        Assert.False(removed);
+    }
+}

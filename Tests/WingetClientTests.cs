@@ -1,4 +1,4 @@
-using Initio.Core.Abstractions;
+﻿using Initio.Core.Abstractions;
 using Initio.Core.Services;
 
 namespace Initio.Tests;
@@ -74,6 +74,18 @@ GitKraken                    Axosoft.GitKraken            10.8.0  winget
     {
         var runner = new RecordingProcessRunner();
         var client = new WingetClient(runner, @"C:\missing\winget.exe");
+
+        var result = await client.GetVersionAsync();
+
+        Assert.Null(result);
+        Assert.Empty(runner.Calls);
+    }
+
+    [Fact]
+    public async Task GetVersionAsync_ReturnsNullWhenWingetPathIsRelative()
+    {
+        var runner = new RecordingProcessRunner();
+        var client = new WingetClient(runner, "winget.exe");
 
         var result = await client.GetVersionAsync();
 

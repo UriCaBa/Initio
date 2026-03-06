@@ -70,16 +70,14 @@ public sealed class BloatwareService : IBloatwareService
     public async Task<HashSet<string>> DetectInstalledAsync(IReadOnlyCollection<string> packageNames, CancellationToken cancellationToken = default)
     {
         var installed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        if (packageNames.Count == 0 ||
-            string.IsNullOrWhiteSpace(_powerShellExecutablePath) ||
-            (Path.IsPathRooted(_powerShellExecutablePath) && !File.Exists(_powerShellExecutablePath)))
+        if (packageNames.Count == 0 || !HasTrustedExecutablePath(_powerShellExecutablePath))
         {
             return installed;
         }
 
         var result = await _processRunner.RunAsync(
             new ProcessSpec(
-                _powerShellExecutablePath,
+                _powerShellExecutablePath!,
                 "-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"Get-AppxPackage | Select-Object -ExpandProperty Name\""),
             TimeSpan.FromSeconds(DetectionTimeoutSeconds),
             cancellationToken).ConfigureAwait(false);
@@ -108,14 +106,14 @@ public sealed class BloatwareService : IBloatwareService
 
     public async Task<bool> RemovePackageAsync(string packageName, CancellationToken cancellationToken = default)
     {
-        if (!InputValidation.IsValidPackageName(packageName) || string.IsNullOrWhiteSpace(_powerShellExecutablePath) || (Path.IsPathRooted(_powerShellExecutablePath) && !File.Exists(_powerShellExecutablePath)))
+        if (!InputValidation.IsValidPackageName(packageName) || !HasTrustedExecutablePath(_powerShellExecutablePath))
         {
             return false;
         }
 
         var result = await _processRunner.RunAsync(
             new ProcessSpec(
-                _powerShellExecutablePath,
+                _powerShellExecutablePath!,
                 $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"$packages = Get-AppxPackage -Name '{packageName}' -ErrorAction SilentlyContinue; if ($null -eq $packages) {{ exit 1 }}; $packages | ForEach-Object {{ Remove-AppxPackage -Package $_.PackageFullName -ErrorAction Stop }}\""),
             TimeSpan.FromSeconds(RemovalTimeoutSeconds),
             cancellationToken).ConfigureAwait(false);
@@ -125,18 +123,25 @@ public sealed class BloatwareService : IBloatwareService
 
     public async Task<bool> VerifyRemovedAsync(string packageName, CancellationToken cancellationToken = default)
     {
-        if (!InputValidation.IsValidPackageName(packageName) || string.IsNullOrWhiteSpace(_powerShellExecutablePath) || (Path.IsPathRooted(_powerShellExecutablePath) && !File.Exists(_powerShellExecutablePath)))
+        if (!InputValidation.IsValidPackageName(packageName) || !HasTrustedExecutablePath(_powerShellExecutablePath))
         {
             return false;
         }
 
         var result = await _processRunner.RunAsync(
             new ProcessSpec(
-                _powerShellExecutablePath,
+                _powerShellExecutablePath!,
                 $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"Get-AppxPackage -Name '{packageName}' | Select-Object -ExpandProperty PackageFullName\""),
             TimeSpan.FromSeconds(10),
             cancellationToken).ConfigureAwait(false);
 
-        return string.IsNullOrWhiteSpace(result?.CombinedOutput);
+        return result is not null && result.ExitCode == 0 && string.IsNullOrWhiteSpace(result.CombinedOutput);
+    }
+
+    private static bool HasTrustedExecutablePath(string? executablePath)
+    {
+        return !string.IsNullOrWhiteSpace(executablePath) &&
+            Path.IsPathRooted(executablePath) &&
+            File.Exists(executablePath);
     }
 }

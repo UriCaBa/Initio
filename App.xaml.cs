@@ -14,7 +14,11 @@ public partial class App : Application
         base.OnStartup(e);
 
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
-            LogCrash((Exception)args.ExceptionObject, "AppDomain");
+        {
+            var exception = args.ExceptionObject as Exception
+                ?? new Exception(args.ExceptionObject?.ToString() ?? "Unknown unhandled exception");
+            LogCrash(exception, "AppDomain");
+        };
 
         DispatcherUnhandledException += (sender, args) =>
         {
