@@ -46,6 +46,26 @@ OBS Studio             OBSProject.OBSStudio    31.0.0
     }
 
     [Fact]
+    public async Task ListInstalledAsync_SanitizesQueryAndSkipsUnsafeEmptyQueries()
+    {
+        var runner = new RecordingProcessRunner();
+        runner.Results.Enqueue(new ProcessResult(0, "Git.Git", string.Empty));
+        var client = new WingetClient(runner, CreateFakeExecutablePath("winget.exe"));
+
+        var result = await client.ListInstalledAsync("\"Git\" --source msstore");
+
+        Assert.Equal("Git.Git", result);
+        Assert.Single(runner.Calls);
+        Assert.DoesNotContain("\"Git\"", runner.Calls[0].Arguments, StringComparison.Ordinal);
+        Assert.Contains("list \"Git --source msstore\"", runner.Calls[0].Arguments, StringComparison.Ordinal);
+
+        var skipped = await client.ListInstalledAsync("\"\"&&");
+
+        Assert.Null(skipped);
+        Assert.Single(runner.Calls);
+    }
+
+    [Fact]
     public async Task SearchAsync_SanitizesQuery_RespectsMaxResults_AndUsesTrustedPath()
     {
         const string output = """

@@ -28,9 +28,15 @@ public sealed class WingetClient : IWingetClient
 
     public async Task<string?> ListInstalledAsync(string? query = null, CancellationToken cancellationToken = default)
     {
-        var arguments = string.IsNullOrWhiteSpace(query)
+        var safeQuery = InputValidation.SanitizeSearchQuery(query);
+        if (!string.IsNullOrWhiteSpace(query) && string.IsNullOrWhiteSpace(safeQuery))
+        {
+            return null;
+        }
+
+        var arguments = string.IsNullOrWhiteSpace(safeQuery)
             ? $"list {WingetSourceFlags}"
-            : $"list \"{query}\" {WingetSourceFlags}";
+            : $"list \"{safeQuery}\" {WingetSourceFlags}";
         return await RunWingetCommandAsync(arguments, TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false);
     }
 
@@ -228,3 +234,4 @@ public sealed class WingetClient : IWingetClient
         return columns;
     }
 }
+
