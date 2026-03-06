@@ -176,6 +176,8 @@ public sealed partial class MainViewModel : ObservableObject
                 OnPropertyChanged(nameof(CanEditCatalog));
                 OnPropertyChanged(nameof(CanRemoveSelectedApp));
                 OnPropertyChanged(nameof(CanDebloat));
+                OnPropertyChanged(nameof(CanCancelInstall));
+                OnPropertyChanged(nameof(CanCancelDebloat));
             }
         }
     }
@@ -437,4 +439,5 @@ public sealed partial class MainViewModel : ObservableObject
         RefreshCommandStates();
     }
 }
+
 

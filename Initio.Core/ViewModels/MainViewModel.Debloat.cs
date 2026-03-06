@@ -53,6 +53,8 @@ public sealed partial class MainViewModel
 
         IsBusy = true;
         _debloatCancellationTokenSource = new CancellationTokenSource();
+        OnPropertyChanged(nameof(CanCancelDebloat));
+        RefreshCommandStates();
 
         try
         {
@@ -81,6 +83,7 @@ public sealed partial class MainViewModel
             IsBusy = false;
             _debloatCancellationTokenSource?.Dispose();
             _debloatCancellationTokenSource = null;
+            OnPropertyChanged(nameof(CanCancelDebloat));
             Debloat.RefreshVisibleItems();
             RefreshCommandStates();
         }
@@ -106,4 +109,3 @@ public sealed partial class MainViewModel
             cancellationToken);
     }
 }
-

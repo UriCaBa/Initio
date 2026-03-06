@@ -39,6 +39,8 @@ public sealed partial class MainViewModel
 
         IsBusy = true;
         _installCancellationTokenSource = new CancellationTokenSource();
+        OnPropertyChanged(nameof(CanCancelInstall));
+        RefreshCommandStates();
 
         try
         {
@@ -68,6 +70,7 @@ public sealed partial class MainViewModel
             IsBusy = false;
             _installCancellationTokenSource?.Dispose();
             _installCancellationTokenSource = null;
+            OnPropertyChanged(nameof(CanCancelInstall));
             RefreshCommandStates();
         }
     }
@@ -219,4 +222,3 @@ public sealed partial class MainViewModel
         }
     }
 }
-

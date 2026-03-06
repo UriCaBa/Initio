@@ -193,6 +193,30 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task RemoveBloatwareCommand_EnablesCancelImmediatelyWhenRemovalStarts()
+    {
+        var bloatware = new StubBloatwareService();
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        bloatware.RemoveHandler = async (_, cancellationToken) =>
+        {
+            await gate.Task.WaitAsync(cancellationToken);
+            return true;
+        };
+        var viewModel = CreateViewModel(bloatware: bloatware);
+        await viewModel.InitializeAsync();
+        viewModel.DebloatSelectAllCommand.Execute(null);
+
+        viewModel.RemoveBloatwareCommand.Execute(null);
+        await AsyncTestHelper.WaitUntilAsync(() => viewModel.IsBusy);
+
+        Assert.True(viewModel.CanCancelDebloat);
+        Assert.True(viewModel.CancelDebloatCommand.CanExecute(null));
+
+        viewModel.CancelDebloatCommand.Execute(null);
+        await AsyncTestHelper.WaitUntilAsync(() => !viewModel.IsBusy);
+    }
+
+    [Fact]
     public async Task RemoveBloatwareCommand_RemovesDetectedPackagesAndUpdatesSummary()
     {
         var bloatware = new StubBloatwareService();
