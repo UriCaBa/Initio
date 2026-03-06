@@ -21,7 +21,7 @@ public static class RetryHelper
                 onRetry?.Invoke(attempt);
             }
 
-            if (await operation(attempt, cancellationToken).ConfigureAwait(false))
+            if (await operation(attempt, cancellationToken))
             {
                 return true;
             }

@@ -103,6 +103,7 @@ public sealed partial class MainViewModel
                 return removed && await _bloatwareService.VerifyRemovedAsync(item.PackageName, token);
             },
             attempt => AppendLog($"  Retry ({attempt}/{MaxInstallRetries}) for {item.Name}..."),
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
     }
 }
+

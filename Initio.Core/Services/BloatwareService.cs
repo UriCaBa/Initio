@@ -131,7 +131,7 @@ public sealed class BloatwareService : IBloatwareService
         var result = await _processRunner.RunAsync(
             new ProcessSpec(
                 _powerShellExecutablePath!,
-                $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"Get-AppxPackage -Name '{packageName}' | Select-Object -ExpandProperty PackageFullName\""),
+                $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"Get-AppxPackage -Name '{packageName}' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty PackageFullName\""),
             TimeSpan.FromSeconds(10),
             cancellationToken).ConfigureAwait(false);
 
@@ -145,3 +145,4 @@ public sealed class BloatwareService : IBloatwareService
             File.Exists(executablePath);
     }
 }
+

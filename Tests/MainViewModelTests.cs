@@ -122,6 +122,30 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task SearchCommand_CannotExecuteWhileAppIsBusy()
+    {
+        var winget = new StubWingetClient();
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        winget.InstallHandler = async (_, _, _, cancellationToken) =>
+        {
+            await gate.Task.WaitAsync(cancellationToken);
+            return "Successfully installed";
+        };
+        var viewModel = CreateViewModel(winget: winget);
+        await viewModel.InitializeAsync();
+        SelectOnlyCatalogItem(viewModel, "Mozilla.Firefox");
+        viewModel.Search.Query = "git";
+
+        viewModel.InstallSelectedCommand.Execute(null);
+        await AsyncTestHelper.WaitUntilAsync(() => viewModel.IsBusy);
+
+        Assert.False(viewModel.SearchCommand.CanExecute(null));
+
+        viewModel.CancelInstallCommand.Execute(null);
+        await AsyncTestHelper.WaitUntilAsync(() => !viewModel.IsBusy);
+    }
+
+    [Fact]
     public async Task InstallSelectedCommand_RetriesOnceThenSucceeds()
     {
         var winget = new StubWingetClient();

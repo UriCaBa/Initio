@@ -39,7 +39,7 @@ public sealed partial class MainViewModel
                 StatusText = $"[{position}/{total}] {actionVerb} {getName(item)}...";
                 AppendLog($"[{position}/{total}] {actionVerb} {getName(item)} ({getIdentifier(item)})...");
 
-                var succeededForItem = await executeItemAsync(item, cancellationToken).ConfigureAwait(false);
+                var succeededForItem = await executeItemAsync(item, cancellationToken);
                 if (succeededForItem)
                 {
                     succeeded++;

@@ -1,4 +1,4 @@
-# Architecture
+﻿# Architecture
 
 ## Overview
 
@@ -42,6 +42,7 @@ Purpose:
 - Hosts the shell window and custom title bar
 - Loads and swaps WPF theme dictionaries
 - Keeps the personal `Activate Windows` button flow out of the core refactor
+- Documents that `Activate Windows` is a personal-use exception retained by choice, not a hardened or recommended workflow
 
 Key files:
 - `App.xaml.cs`
@@ -170,5 +171,6 @@ This mode exists to keep UI automation independent from network, `winget`, or Po
 
 - `MainWindow.xaml.cs` should not own install/search/debloat business logic
 - `Activate Windows` remains shell-only and out of `Initio.Core`
+- `Activate Windows` stays in the app for personal use, with the expectation that it is intentionally outside the hardened workflows described for the rest of the codebase
 - tests reference `Initio.Core` directly; no unit test relies on a built app DLL
 - UI automation runs against a built executable in test mode

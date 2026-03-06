@@ -108,7 +108,7 @@ public sealed partial class MainViewModel
                 return await VerifyInstalledAsync(app.Name, token);
             },
             attempt => AppendLog($"  Retry ({attempt}/{MaxInstallRetries}) for {app.Name}..."),
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken);
     }
 
     private async Task<bool> VerifyInstalledAsync(string query, CancellationToken cancellationToken)
@@ -119,6 +119,11 @@ public sealed partial class MainViewModel
 
     private async Task SearchWingetAsync()
     {
+        if (IsBusy || Search.IsSearching || !IsWingetAvailable)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(Search.Query))
         {
             AppendLog("Enter a search query first.");
@@ -214,3 +219,4 @@ public sealed partial class MainViewModel
         }
     }
 }
+

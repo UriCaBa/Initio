@@ -76,7 +76,7 @@ public sealed partial class MainViewModel : ObservableObject
         DebloatSelectNoneCommand = new RelayCommand(_ => Debloat.SelectNone(), _ => CanDebloat);
         AddStoreTrendAppCommand = new RelayCommand(_ => AddSelectedStoreApps(), _ => !IsBusy);
         RemoveSelectedAppCommand = new RelayCommand(_ => RemoveSelectedCatalogApp(), _ => CanRemoveSelectedApp);
-        SearchCommand = new AsyncRelayCommand(_ => SearchWingetAsync(), _ => !Search.IsSearching);
+        SearchCommand = new AsyncRelayCommand(_ => SearchWingetAsync(), _ => !IsBusy && !Search.IsSearching && IsWingetAvailable);
         ResetDefaultCatalogCommand = new AsyncRelayCommand(_ => ResetDefaultCatalogAsync(), _ => CanEditCatalog);
         RefreshInstalledCommand = new AsyncRelayCommand(_ => RefreshInstalledStatesAsync(), _ => CanInstall);
         InstallSelectedCommand = new AsyncRelayCommand(_ => InstallSelectedAsync(), _ => CanInstall);
@@ -437,3 +437,4 @@ public sealed partial class MainViewModel : ObservableObject
         RefreshCommandStates();
     }
 }
+

@@ -95,6 +95,7 @@ public class BloatwareServiceTests
         Assert.True(removed);
         Assert.Single(runner.Calls);
         Assert.Contains("Get-AppxPackage -Name 'king.com.CandyCrushSaga'", runner.Calls[0].Arguments, StringComparison.Ordinal);
+        Assert.Contains("-ErrorAction SilentlyContinue", runner.Calls[0].Arguments, StringComparison.Ordinal);
         Assert.DoesNotContain("*king.com.CandyCrushSaga*", runner.Calls[0].Arguments, StringComparison.Ordinal);
     }
 
