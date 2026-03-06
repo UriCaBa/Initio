@@ -75,7 +75,6 @@ public sealed class StoreViewModel : ObservableObject
         }
 
         BuildCategories();
-        RefreshVisibleItems();
         OnPropertyChanged(nameof(SelectedCount));
     }
 

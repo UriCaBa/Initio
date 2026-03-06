@@ -63,7 +63,6 @@ public sealed class DebloatViewModel : ObservableObject
         }
 
         BuildCategories();
-        RefreshVisibleItems();
         OnPropertyChanged(nameof(Summary));
     }
 

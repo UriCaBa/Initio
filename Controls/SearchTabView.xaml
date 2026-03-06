@@ -26,8 +26,7 @@
                         Content="Search winget"
                         AutomationProperties.AutomationId="SearchWingetBtn"
                         Command="{Binding SearchCommand}"
-                        Margin="8,0,0,0"
-                        IsEnabled="{Binding Search.IsSearching, Converter={StaticResource InverseBoolConverter}}" />
+                        Margin="8,0,0,0" />
             </Grid>
 
             <ListView Grid.Row="1"
@@ -84,5 +83,6 @@
         </Grid>
     </Border>
 </UserControl>
+
 
 
